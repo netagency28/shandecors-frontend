@@ -1,0 +1,71 @@
+/* Additional utility classes for the ecommerce site */
+
+/* Line clamp utilities */
+.line-clamp-1 {
+  display: -webkit-box;
+  -webkit-line-clamp: 1;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.line-clamp-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.line-clamp-3 {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* Aspect ratio fallback */
+.aspect-3\/4 {
+  aspect-ratio: 3 / 4;
+}
+
+.aspect-4\/3 {
+  aspect-ratio: 4 / 3;
+}
+
+/* Image warm filter */
+.img-warm {
+  filter: sepia(5%);
+}
+
+/* Smooth transitions */
+.transition-transform {
+  transition-property: transform;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Hide scrollbar but keep functionality */
+.hide-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+/* Product card hover effects */
+.group:hover .group-hover\:scale-105 {
+  transform: scale(1.05);
+}
+
+/* Button focus states */
+button:focus-visible {
+  outline: 2px solid hsl(var(--ring));
+  outline-offset: 2px;
+}
+
+/* Input focus states */
+input:focus-visible,
+textarea:focus-visible {
+  outline: none;
+  ring: 1px solid hsl(var(--ring));
+}
