@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
@@ -62,7 +62,7 @@ function AdminProductsContent() {
   const [categoryForm, setCategoryForm] = useState({ name: '', slug: '', description: '' });
   const [categorySaving, setCategorySaving] = useState(false);
 
-  const fetchAll = async () => {
+  const fetchAll = useCallback(async () => {
     try {
       const [productsRes, categoriesRes] = await Promise.all([
         getAdminProducts({ limit: 200 }),
@@ -78,11 +78,11 @@ function AdminProductsContent() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [navigate]);
 
   useEffect(() => {
     fetchAll();
-  }, []);
+  }, [fetchAll]);
 
   const handleDelete = async () => {
     if (!deleteId) return;

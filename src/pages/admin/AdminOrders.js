@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Search, Eye, Package, Download } from 'lucide-react';
@@ -25,7 +25,7 @@ function AdminOrdersContent() {
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
 
-  const fetchOrders = async () => {
+  const fetchOrders = useCallback(async () => {
     try {
       const params = statusFilter !== 'all' ? { status: statusFilter } : {};
       const response = await getAdminOrders({ ...params, limit: 100 });
@@ -38,11 +38,11 @@ function AdminOrdersContent() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [statusFilter, navigate]);
 
   useEffect(() => {
     fetchOrders();
-  }, [statusFilter]);
+  }, [fetchOrders]);
 
   const handleStatusChange = async (orderId, newStatus) => {
     try {
