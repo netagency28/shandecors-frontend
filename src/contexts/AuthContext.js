@@ -10,6 +10,15 @@ import {
 
 const AuthContext = createContext(undefined);
 
+function getApiErrorMessage(error) {
+  return (
+    error?.response?.data?.message ||
+    error?.response?.data?.error?.message ||
+    error?.message ||
+    'Request failed'
+  );
+}
+
 const initialState = {
   user: null,
   session: null,
@@ -166,8 +175,9 @@ export function AuthProvider({ children }) {
 
       return response.data;
     } catch (error) {
-      dispatch({ type: 'SET_ERROR', payload: error.message });
-      return { error: error.message };
+      const message = getApiErrorMessage(error);
+      dispatch({ type: 'SET_ERROR', payload: message });
+      return { error: message };
     }
   }, [refreshMe]);
 
@@ -200,8 +210,9 @@ export function AuthProvider({ children }) {
 
       return response.data;
     } catch (error) {
-      dispatch({ type: 'SET_ERROR', payload: error.message });
-      return { error: error.message };
+      const message = getApiErrorMessage(error);
+      dispatch({ type: 'SET_ERROR', payload: message });
+      return { error: message };
     }
   }, [refreshMe]);
 
@@ -211,8 +222,9 @@ export function AuthProvider({ children }) {
       dispatch({ type: 'SET_PROFILE', payload: response.data });
       return response.data;
     } catch (error) {
-      dispatch({ type: 'SET_ERROR', payload: error.message });
-      return { error: error.message };
+      const message = getApiErrorMessage(error);
+      dispatch({ type: 'SET_ERROR', payload: message });
+      return { error: message };
     }
   }, []);
 

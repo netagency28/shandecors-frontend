@@ -8,12 +8,13 @@ import { Label } from '../components/ui/label';
 import { useAuth } from '../contexts/AuthContext';
 
 export default function ProfilePage() {
-  const { isAuthenticated, user, profile, updateProfile, refreshMe } = useAuth();
+  const { isAuthenticated, isLoading, user, profile, updateProfile, refreshMe } = useAuth();
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
+  const isAdmin = profile?.is_admin || user?.role === 'ADMIN';
 
   useEffect(() => {
     const load = async () => {
@@ -32,8 +33,22 @@ export default function ProfilePage() {
     }
   }, [isAuthenticated, profile, user, refreshMe]);
 
+  if (isLoading) {
+    return (
+      <div className="min-h-screen py-12 px-4 md:px-8 lg:px-12">
+        <div className="container mx-auto max-w-screen-md text-sm uppercase tracking-[0.18em] text-muted-foreground">
+          Loading profile...
+        </div>
+      </div>
+    );
+  }
+
   if (!isAuthenticated) {
     return <Navigate to="/login" replace />;
+  }
+
+  if (isAdmin) {
+    return <Navigate to="/admin" replace />;
   }
 
   const handleSave = async (e) => {
