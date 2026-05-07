@@ -9,6 +9,7 @@ import { useAuth } from '../contexts/AuthContext';
 
 export default function LoginPage() {
   const [isLogin, setIsLogin] = useState(true);
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
@@ -16,7 +17,7 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState('');
   
-  const { signIn, signUp } = useAuth();
+  const { signIn, signUp, resetPassword } = useAuth();
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
@@ -41,6 +42,27 @@ export default function LoginPage() {
           setSuccess('Account created! Please check your email to verify your account.');
           setIsLogin(true);
         }
+      }
+    } catch (err) {
+      setError('An unexpected error occurred');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleForgotPassword = async (e) => {
+    e.preventDefault();
+    setError('');
+    setSuccess('');
+    setLoading(true);
+
+    try {
+      const result = await resetPassword(email);
+      if (result.error) {
+        setError(result.error);
+      } else {
+        setSuccess('Password reset link sent! Please check your email.');
+        setShowForgotPassword(false);
       }
     } catch (err) {
       setError('An unexpected error occurred');
@@ -176,11 +198,75 @@ export default function LoginPage() {
             </Button>
           </form>
 
+          {/* Forgot Password */}
+          {isLogin && !showForgotPassword && (
+            <div className="mt-4 text-center">
+              <button
+                type="button"
+                onClick={() => setShowForgotPassword(true)}
+                className="text-sm text-muted-foreground hover:text-accent transition-colors"
+              >
+                Forgot your password?
+              </button>
+            </div>
+          )}
+
+          {/* Forgot Password Form */}
+          {showForgotPassword && (
+            <form onSubmit={handleForgotPassword} className="mt-6 space-y-4 border-t pt-6">
+              <h3 className="text-lg font-medium">Reset Password</h3>
+              <p className="text-sm text-muted-foreground">
+                Enter your email address and we'll send you a link to reset your password.
+              </p>
+              
+              <div>
+                <Label htmlFor="reset-email" className="text-sm font-medium mb-2 block">
+                  Email Address
+                </Label>
+                <div className="relative">
+                  <Mail size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                  <Input
+                    id="reset-email"
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="john@example.com"
+                    required
+                    className="pl-10 rounded-none"
+                  />
+                </div>
+              </div>
+
+              <div className="flex gap-3">
+                <Button
+                  type="submit"
+                  disabled={loading || !email}
+                  className="flex-1 rounded-none bg-foreground text-background hover:bg-foreground/90"
+                >
+                  {loading ? 'Sending...' : 'Send Reset Link'}
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => {
+                    setShowForgotPassword(false);
+                    setError('');
+                    setSuccess('');
+                  }}
+                  className="rounded-none"
+                >
+                  Cancel
+                </Button>
+              </div>
+            </form>
+          )}
+
           <div className="mt-8 text-center">
             <button
               type="button"
               onClick={() => {
                 setIsLogin(!isLogin);
+                setShowForgotPassword(false);
                 setError('');
                 setSuccess('');
               }}

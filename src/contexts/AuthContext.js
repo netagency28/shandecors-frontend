@@ -4,6 +4,7 @@ import {
   signIn as apiSignIn,
   signOut as apiSignOut,
   refreshSession as apiRefreshSession,
+  resetPassword as apiResetPassword,
   getMe,
   updateProfile as apiUpdateProfile,
 } from '../lib/api';
@@ -228,6 +229,16 @@ export function AuthProvider({ children }) {
     }
   }, []);
 
+  const resetPassword = useCallback(async (email) => {
+    try {
+      const response = await apiResetPassword(email);
+      return response.data;
+    } catch (error) {
+      const message = getApiErrorMessage(error);
+      return { error: message };
+    }
+  }, []);
+
   const signOut = useCallback(async () => {
     dispatch({ type: 'SET_LOADING', payload: true });
     try {
@@ -246,9 +257,10 @@ export function AuthProvider({ children }) {
     signIn,
     signOut,
     updateProfile,
+    resetPassword,
     refreshMe,
     dispatch,
-  }), [state, signUp, signIn, signOut, updateProfile, refreshMe]);
+  }), [state, signUp, signIn, signOut, updateProfile, resetPassword, refreshMe]);
 
   return (
     <AuthContext.Provider value={value}>

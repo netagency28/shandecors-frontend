@@ -2,19 +2,73 @@ import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { ShoppingBag, Heart } from 'lucide-react';
 import { useCart } from '../../contexts/CartContext';
-import { useState } from 'react';
+import { useAuth } from '../../contexts/AuthContext';
+import { useState, useEffect, useCallback } from 'react';
+import { addToWishlist, removeFromWishlist, checkWishlist } from '../../lib/api';
 import { optimizeImageUrl } from '../../lib/images';
 
 export default function ProductCard({ product, index = 0 }) {
   const price = product.sale_price || product.price;
   const hasDiscount = product.sale_price && product.sale_price < product.price;
   const { addItem } = useCart();
+  const { isAuthenticated } = useAuth();
   const [isHovered, setIsHovered] = useState(false);
+  const [isInWishlist, setIsInWishlist] = useState(false);
+  const [wishlistLoading, setWishlistLoading] = useState(false);
+
+  // Check if product is in wishlist when component mounts or auth state changes
+  const checkWishlistStatus = useCallback(async () => {
+    try {
+      const response = await checkWishlist(product.id);
+      setIsInWishlist(response.data.isInWishlist);
+    } catch (error) {
+      console.error('Error checking wishlist status:', error);
+    }
+  }, [product.id]);
+
+  useEffect(() => {
+    if (isAuthenticated && product?.id) {
+      checkWishlistStatus();
+    } else {
+      setIsInWishlist(false);
+    }
+  }, [isAuthenticated, product?.id, checkWishlistStatus]);
 
   const handleAddToCart = (e) => {
     e.preventDefault();
     e.stopPropagation();
     addItem(product, 1);
+  };
+
+  const handleWishlistToggle = async (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    if (!isAuthenticated) {
+      // Redirect to login or show login prompt
+      window.location.href = '/login';
+      return;
+    }
+
+    if (wishlistLoading) return;
+
+    setWishlistLoading(true);
+    
+    try {
+      if (isInWishlist) {
+        await removeFromWishlist(product.id);
+        setIsInWishlist(false);
+      } else {
+        await addToWishlist({ productId: product.id });
+        setIsInWishlist(true);
+      }
+    } catch (error) {
+      console.error('Error updating wishlist:', error);
+      // Show error message to user
+      alert('Failed to update wishlist. Please try again.');
+    } finally {
+      setWishlistLoading(false);
+    }
   };
 
   return (
@@ -62,9 +116,19 @@ export default function ProductCard({ product, index = 0 }) {
               <ShoppingBag size={16} />
             </button>
             <button
-              className="w-10 h-10 bg-white flex items-center justify-center hover:bg-foreground hover:text-white transition-colors shadow-md"
+              onClick={handleWishlistToggle}
+              disabled={wishlistLoading}
+              className={`w-10 h-10 flex items-center justify-center transition-colors shadow-md ${
+                isInWishlist 
+                  ? 'bg-accent text-white hover:bg-accent/90' 
+                  : 'bg-white hover:bg-foreground hover:text-white'
+              }`}
+              data-testid={`wishlist-${product.slug}`}
             >
-              <Heart size={16} />
+              <Heart 
+                size={16} 
+                className={isInWishlist ? 'fill-current' : ''}
+              />
             </button>
           </motion.div>
         </div>

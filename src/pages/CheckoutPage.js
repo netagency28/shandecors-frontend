@@ -9,7 +9,7 @@ import { Textarea } from '../components/ui/textarea';
 import { Separator } from '../components/ui/separator';
 import { useCart } from '../contexts/CartContext';
 import { useAuth } from '../contexts/AuthContext';
-import { createOrder, createGuestOrder, createPaymentOrder } from '../lib/api';
+import { createOrder, createGuestOrder, createPaymentOrder, getAddresses } from '../lib/api';
 
 const loadCashfreeSdk = () => new Promise((resolve, reject) => {
   if (window.Cashfree) {
@@ -40,6 +40,7 @@ export default function CheckoutPage() {
   
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [termsAccepted, setTermsAccepted] = useState(false);
   
   const [formData, setFormData] = useState({
     full_name: '',
@@ -58,6 +59,23 @@ export default function CheckoutPage() {
       navigate('/products');
     }
   }, [items, navigate]);
+
+  // Pre-fill from default saved address when authenticated
+  useEffect(() => {
+    if (!isAuthenticated) return;
+    getAddresses().then((res) => {
+      const def = (res.data || []).find((a) => a.isDefault) || res.data?.[0];
+      if (def) {
+        setFormData((prev) => ({
+          ...prev,
+          address_line1: def.street || prev.address_line1,
+          city: def.city || prev.city,
+          state: def.state || prev.state,
+          postal_code: def.postalCode || prev.postal_code,
+        }));
+      }
+    }).catch(() => {});
+  }, [isAuthenticated]);
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -332,10 +350,29 @@ export default function CheckoutPage() {
                 </div>
               </div>
 
+              {/* T&C acceptance — required by Cashfree production */}
+              <div className="flex items-start gap-3 py-2">
+                <input
+                  id="terms-accept"
+                  type="checkbox"
+                  checked={termsAccepted}
+                  onChange={(e) => setTermsAccepted(e.target.checked)}
+                  className="mt-1 h-4 w-4 border-gray-300 rounded cursor-pointer"
+                  data-testid="terms-checkbox"
+                />
+                <label htmlFor="terms-accept" className="text-xs text-muted-foreground leading-relaxed cursor-pointer">
+                  I agree to the{' '}
+                  <Link to="/terms-and-conditions" target="_blank" className="underline hover:text-foreground">Terms & Conditions</Link>,{' '}
+                  <Link to="/refunds-cancellation-policy" target="_blank" className="underline hover:text-foreground">Refund Policy</Link>, and{' '}
+                  <Link to="/shipping-policy" target="_blank" className="underline hover:text-foreground">Shipping Policy</Link>.
+                </label>
+              </div>
+
               <Button
                 type="submit"
-                disabled={loading}
-                className="w-full rounded-none bg-foreground text-background hover:bg-foreground/90 px-8 py-6 uppercase tracking-widest text-xs font-bold"
+                disabled={loading || !termsAccepted}
+                title={!termsAccepted ? 'Please accept the Terms & Conditions to continue' : ''}
+                className="w-full rounded-none bg-foreground text-background hover:bg-foreground/90 px-8 py-6 uppercase tracking-widest text-xs font-bold disabled:opacity-50 disabled:cursor-not-allowed"
                 data-testid="place-order-btn"
               >
                 {loading ? 'Processing...' : `Place Order - ₹${total.toLocaleString()}`}

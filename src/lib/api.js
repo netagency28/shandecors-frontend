@@ -63,6 +63,7 @@ api.interceptors.response.use(
         } catch (refreshError) {
           localStorage.removeItem('supabase_token');
           localStorage.removeItem('supabase_refresh_token');
+          window.location.href = '/login';
           return Promise.reject(refreshError);
         }
       }
@@ -103,6 +104,7 @@ export const signUp = (email, password, name) => api.post('/auth/signup', { emai
 export const signIn = (email, password) => api.post('/auth/signin', { email, password });
 export const signOut = () => api.post('/auth/signout');
 export const refreshSession = (refreshToken) => api.post('/auth/refresh', { refresh_token: refreshToken });
+export const resetPassword = (email) => api.post('/auth/reset-password', { email });
 
 // Admin
 export const getDashboardStats = () => api.get('/admin/dashboard');
@@ -117,6 +119,11 @@ export const updateOrderStatus = (orderId, status) => api.put(`/admin/orders/${o
 export const createCategory = (data) => api.post('/admin/categories', data);
 export const deleteCategory = (categoryId) => api.delete(`/admin/categories/${categoryId}`);
 export const getAdminUsers = () => api.get('/admin/users');
+export const getAdminReviews = (params) => api.get('/admin/reviews', { params });
+export const moderateAdminReview = (reviewId, moderationStatus) =>
+  api.put(`/admin/reviews/${reviewId}/moderate`, { moderationStatus });
+export const replyAdminReview = (reviewId, adminReply) =>
+  api.put(`/admin/reviews/${reviewId}/reply`, { adminReply });
 export const getAdminContent = () => api.get('/admin/content');
 export const updateAdminContent = (slug, data) => api.put(`/admin/content/${slug}`, data);
 
@@ -136,6 +143,32 @@ export const uploadSingle = (file, type = 'product', path = '') => {
 // Auth
 export const getMe = () => api.get('/auth/me');
 export const updateProfile = (data) => api.post('/auth/profile', data);
+
+// Reviews
+export const getProductReviews = (productId, params = {}) => api.get(`/reviews/product/${productId}`, { params });
+export const getUserReview = (productId) => api.get(`/reviews/user/${productId}`);
+export const createReview = (data) => api.post('/reviews', data);
+export const updateReview = (id, data) => api.put(`/reviews/${id}`, data);
+export const deleteReview = (id) => api.delete(`/reviews/${id}`);
+
+// Wishlist
+export const getWishlist = (params = {}) => api.get('/wishlist', { params });
+export const checkWishlist = (productId) => api.get(`/wishlist/check/${productId}`);
+export const addToWishlist = (data) => api.post('/wishlist', data);
+export const removeFromWishlist = (productId) => api.delete(`/wishlist/${productId}`);
+export const clearWishlist = () => api.delete('/wishlist');
+export const moveToCart = (productId) => api.post(`/wishlist/move-to-cart/${productId}`);
+
+// User profile
+export const getUserProfile = () => api.get('/users/profile');
+export const updateUserProfile = (data) => api.put('/users/profile', data);
+
+// Addresses
+export const getAddresses = () => api.get('/addresses');
+export const createAddress = (data) => api.post('/addresses', data);
+export const updateAddress = (id, data) => api.put(`/addresses/${id}`, data);
+export const deleteAddress = (id) => api.delete(`/addresses/${id}`);
+export const setDefaultAddress = (id) => api.put(`/addresses/${id}/default`);
 
 // Seed data
 export const seedData = () => api.post('/seed');

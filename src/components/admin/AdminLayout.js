@@ -5,6 +5,7 @@ import {
   Package,
   Users,
   FileText,
+  MessageSquareText,
   Eye,
   LogOut,
   Plus,
@@ -15,6 +16,7 @@ import { useAuth } from '../../contexts/AuthContext';
 const navItems = [
   { to: '/admin', label: 'Overview', icon: LayoutDashboard },
   { to: '/admin/orders', label: 'Orders', icon: ShoppingCart },
+  { to: '/admin/reviews', label: 'Reviews', icon: MessageSquareText },
   { to: '/admin/products', label: 'Products', icon: Package },
   { to: '/admin/users', label: 'Users', icon: Users },
   { to: '/admin/content', label: 'Site Content', icon: FileText },

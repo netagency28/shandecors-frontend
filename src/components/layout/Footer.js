@@ -64,8 +64,18 @@ export default function Footer() {
             <h3 className="text-sm tracking-[0.15em] uppercase font-medium text-white mb-6">Information</h3>
             <ul className="space-y-3">
               <li>
+                <Link to="/about" className="text-sm text-white/60 hover:text-white transition-colors">
+                  About Us
+                </Link>
+              </li>
+              <li>
                 <Link to="/contact" className="text-sm text-white/60 hover:text-white transition-colors">
                   Contact Us
+                </Link>
+              </li>
+              <li>
+                <Link to="/privacy-policy" className="text-sm text-white/60 hover:text-white transition-colors">
+                  Privacy Policy
                 </Link>
               </li>
               <li>
@@ -92,24 +102,33 @@ export default function Footer() {
             <ul className="space-y-4">
               <li className="flex gap-3">
                 <MapPin size={18} className="flex-shrink-0 text-white/40" />
-                <span className="text-sm text-white/60">123 Street, New Delhi, India</span>
+                <span className="text-sm text-white/60">Shan Decor, India</span>
               </li>
               <li className="flex gap-3">
                 <Phone size={18} className="flex-shrink-0 text-white/40" />
-                <span className="text-sm text-white/60">+91 98765 43210</span>
+                <a href="tel:+919876543210" className="text-sm text-white/60 hover:text-white transition-colors">+91 98765 43210</a>
               </li>
               <li className="flex gap-3">
                 <Mail size={18} className="flex-shrink-0 text-white/40" />
-                <span className="text-sm text-white/60">hello@auros.com</span>
+                <a href="mailto:support@shandecor.in" className="text-sm text-white/60 hover:text-white transition-colors">support@shandecor.in</a>
               </li>
             </ul>
           </div>
         </div>
 
+        {/* Legal Seller Disclosure — Consumer Protection (E-Commerce) Rules 2020 */}
+        <div className="mt-12 pt-8 border-t border-white/10">
+          <p className="text-xs text-white/30 leading-relaxed max-w-3xl">
+            <strong className="text-white/40">Shan Decor</strong> — Registered in India. All prices are inclusive of applicable taxes.
+            Grievance Officer: <a href="mailto:support@shandecor.in" className="underline hover:text-white/60">support@shandecor.in</a>.
+            For disputes, contact us within 30 days of purchase.
+          </p>
+        </div>
+
         {/* Bottom Bar */}
-        <div className="mt-16 pt-8 border-t border-white/10 flex flex-col md:flex-row justify-between items-center gap-4">
+        <div className="mt-6 pt-6 border-t border-white/10 flex flex-col md:flex-row justify-between items-center gap-4">
           <p className="text-xs text-white/40">
-            © 2024 Shan Decors. All rights reserved.
+            © {new Date().getFullYear()} Shan Decor. All rights reserved.
           </p>
           <div className="flex gap-6">
             <img src="https://cdn.shopify.com/s/files/1/0012/9669/5765/files/payment-1_77da8ffc-f89c-4cb9-91a8-27c1c7e4e0d0.png?v=1627295970" alt="Payment methods" className="h-6 opacity-60" />

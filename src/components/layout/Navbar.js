@@ -1,25 +1,69 @@
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { ShoppingBag, User, Menu, X, Search, Heart } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useCart } from '../../contexts/CartContext';
 import { useAuth } from '../../contexts/AuthContext';
+import { useWishlist } from '../../contexts/WishlistContext';
 import { Button } from '../ui/button';
+import { Input } from '../ui/input';
 import { Sheet, SheetContent, SheetTrigger } from '../ui/sheet';
 import CartDrawer from './CartDrawer';
 
 export default function Navbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
   const { cartCount } = useCart();
+  const { wishlistCount } = useWishlist();
   const { isAuthenticated, profile, user } = useAuth();
   const isAdmin = profile?.is_admin || user?.role === 'ADMIN';
+  const navigate = useNavigate();
+  const searchRef = useRef(null);
 
   const navLinks = [
     { href: '/', label: 'Home' },
+    { href: '/about', label: 'About' },
     { href: '/products', label: 'Shop' },
     { href: '/products?category=lamps', label: 'Lamps' },
     { href: '/products?category=vases', label: 'Vases' },
     { href: '/products?category=accessories', label: 'Accessories' },
   ];
+
+  const handleSearch = (e) => {
+    e.preventDefault();
+    if (searchQuery.trim()) {
+      navigate(`/products?search=${encodeURIComponent(searchQuery.trim())}`);
+      setIsSearchOpen(false);
+      setSearchQuery('');
+    }
+  };
+
+  const toggleSearch = () => {
+    setIsSearchOpen(!isSearchOpen);
+    if (!isSearchOpen) {
+      // Focus search input when opening
+      setTimeout(() => {
+        document.getElementById('navbar-search')?.focus();
+      }, 100);
+    }
+  };
+
+  // Close search dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (searchRef.current && !searchRef.current.contains(event.target)) {
+        setIsSearchOpen(false);
+      }
+    };
+
+    if (isSearchOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isSearchOpen]);
 
   return (
     <header className="sticky top-0 z-50 w-full bg-white border-b border-border/20" data-testid="navbar">
@@ -59,13 +103,60 @@ export default function Navbar() {
                 {link.label}
               </Link>
             ))}
+            <Link to="/wishlist" className="relative" data-testid="wishlist-link">
+              <Heart size={20} className="text-foreground hover:text-accent transition-colors" />
+              {wishlistCount > 0 && (
+                <span className="absolute -top-1 -right-1 bg-accent text-white text-[10px] rounded-full w-4 h-4 flex items-center justify-center">
+                  {wishlistCount}
+                </span>
+              )}
+            </Link>
           </nav>
 
           {/* Actions */}
           <div className="flex items-center gap-1 md:gap-3">
-            <Button variant="ghost" size="icon" className="hover:bg-transparent" data-testid="search-btn">
-              <Search size={20} className="text-foreground/70" />
-            </Button>
+            {/* Search */}
+            <div className="relative" ref={searchRef}>
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                className="hover:bg-transparent" 
+                onClick={toggleSearch}
+                data-testid="search-btn"
+              >
+                <Search size={20} className="text-foreground/70" />
+              </Button>
+              
+              {/* Search Dropdown */}
+              {isSearchOpen && (
+                <div className="absolute right-0 top-full mt-2 w-80 bg-white border border-border rounded-sm shadow-lg p-4">
+                  <form onSubmit={handleSearch} className="space-y-3">
+                    <Input
+                      id="navbar-search"
+                      type="text"
+                      placeholder="Search products..."
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      className="rounded-none"
+                    />
+                    <div className="flex gap-2">
+                      <Button type="submit" size="sm" className="rounded-none flex-1">
+                        Search
+                      </Button>
+                      <Button 
+                        type="button" 
+                        variant="outline" 
+                        size="sm" 
+                        onClick={toggleSearch}
+                        className="rounded-none"
+                      >
+                        Cancel
+                      </Button>
+                    </div>
+                  </form>
+                </div>
+              )}
+            </div>
             
             {isAuthenticated ? (
               <Link to={isAdmin ? '/admin' : '/profile'}>

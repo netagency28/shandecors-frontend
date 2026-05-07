@@ -5,18 +5,26 @@ import { Minus, Plus, ShoppingBag, Heart, Check, ChevronRight, Star } from 'luci
 import { Button } from '../components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
 import { getProduct, getProducts } from '../lib/api';
+import { createReview, updateReview, deleteReview, getUserReview } from '../lib/api';
 import { useCart } from '../contexts/CartContext';
+import { useAuth } from '../contexts/AuthContext';
 import ProductCard from '../components/product/ProductCard';
+import ReviewForm from '../components/review/ReviewForm';
+import ReviewsList from '../components/review/ReviewsList';
 import { optimizeImageUrl } from '../lib/images';
 
 export default function ProductDetailPage() {
   const { slug } = useParams();
+  const { user, isAuthenticated } = useAuth();
   const [product, setProduct] = useState(null);
   const [relatedProducts, setRelatedProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [quantity, setQuantity] = useState(1);
   const [addedToCart, setAddedToCart] = useState(false);
   const [selectedImage, setSelectedImage] = useState(0);
+  const [userReview, setUserReview] = useState(null);
+  const [showReviewForm, setShowReviewForm] = useState(false);
+  const [reviewKey, setReviewKey] = useState(0); // To refresh reviews list
   const { addItem } = useCart();
 
   useEffect(() => {
@@ -36,6 +44,17 @@ export default function ProductDetailPage() {
             relatedRes.data.products?.filter(p => p.id !== response.data.id).slice(0, 4) || []
           );
         }
+
+        // Fetch user's review if authenticated
+        if (isAuthenticated && response.data?.id) {
+          try {
+            const reviewResponse = await getUserReview(response.data.id);
+            setUserReview(reviewResponse.data);
+          } catch (err) {
+            // User hasn't reviewed yet
+            setUserReview(null);
+          }
+        }
       } catch (error) {
         console.error('Error fetching product:', error);
       } finally {
@@ -44,7 +63,7 @@ export default function ProductDetailPage() {
     };
     fetchProduct();
     window.scrollTo(0, 0);
-  }, [slug]);
+  }, [slug, isAuthenticated]);
 
   const handleAddToCart = () => {
     if (product) {
@@ -52,6 +71,29 @@ export default function ProductDetailPage() {
       setAddedToCart(true);
       setTimeout(() => setAddedToCart(false), 2000);
     }
+  };
+
+  const handleReviewSubmit = async (reviewData) => {
+    try {
+      if (userReview) {
+        // Update existing review
+        const response = await updateReview(userReview.id, reviewData);
+        setUserReview(response.data);
+      } else {
+        // Create new review
+        const response = await createReview(reviewData);
+        setUserReview(response.data);
+      }
+      setShowReviewForm(false);
+      setReviewKey(prev => prev + 1); // Refresh reviews list
+    } catch (error) {
+      console.error('Error submitting review:', error);
+      alert(error.response?.data?.error || 'Failed to submit review');
+    }
+  };
+
+  const handleReviewUpdate = () => {
+    setReviewKey(prev => prev + 1); // Refresh reviews list
   };
 
   if (loading) {
@@ -275,6 +317,12 @@ export default function ProductDetailPage() {
                   >
                     Returns
                   </TabsTrigger>
+                  <TabsTrigger 
+                    value="reviews" 
+                    className="rounded-none border-b-2 border-transparent data-[state=active]:border-foreground data-[state=active]:bg-transparent pb-3 px-0 text-sm uppercase tracking-wider"
+                  >
+                    Reviews
+                  </TabsTrigger>
                 </TabsList>
                 <TabsContent value="description" className="pt-6">
                   <p className="text-foreground/70 leading-relaxed">
@@ -292,6 +340,48 @@ export default function ProductDetailPage() {
                     Easy 14-day returns. Items must be unused and in original packaging.
                     Contact our customer service for return authorization.
                   </p>
+                </TabsContent>
+                <TabsContent value="reviews" className="pt-6">
+                  <div className="space-y-8">
+                    {/* Review Form Section */}
+                    <div className="border-b border-border pb-8">
+                      <h3 className="font-display text-xl mb-4">
+                        {userReview ? 'Update Your Review' : 'Write a Review'}
+                      </h3>
+                      {userReview?.moderationStatus === 'PENDING' && (
+                        <p className="text-sm text-muted-foreground mb-4 border border-border bg-secondary/40 px-4 py-3">
+                          Your review is awaiting moderation. It will appear publicly after the team approves it.
+                        </p>
+                      )}
+                      {userReview?.moderationStatus === 'REJECTED' && (
+                        <p className="text-sm text-destructive mb-4 border border-destructive/30 bg-destructive/5 px-4 py-3">
+                          This review was not published. You can update it and it will be submitted again for review.
+                        </p>
+                      )}
+                      {showReviewForm || userReview ? (
+                        <ReviewForm
+                          productId={product.id}
+                          existingReview={userReview}
+                          onSubmit={handleReviewSubmit}
+                          onCancel={() => setShowReviewForm(false)}
+                        />
+                      ) : (
+                        <div className="text-center py-6 bg-secondary/20 rounded-sm">
+                          <p className="text-foreground/70 mb-4">Share your experience with this product</p>
+                          <Button onClick={() => setShowReviewForm(true)}>
+                            Write a Review
+                          </Button>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Reviews List */}
+                    <ReviewsList
+                      key={reviewKey}
+                      productId={product.id}
+                      onReviewUpdate={handleReviewUpdate}
+                    />
+                  </div>
                 </TabsContent>
               </Tabs>
             </motion.div>

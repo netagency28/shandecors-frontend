@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { getContentPage } from '../lib/api';
 
-export default function StaticContentPage({ slug, fallbackTitle }) {
+export default function StaticContentPage({ slug, fallbackTitle, fallbackContent }) {
   const [page, setPage] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -22,6 +22,14 @@ export default function StaticContentPage({ slug, fallbackTitle }) {
     load();
   }, [slug]);
 
+  const renderBody = () => {
+    if (loading) return <p className="text-muted-foreground">Loading...</p>;
+    if (page?.body) return <div className="prose prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: page.body }} />;
+    if (fallbackContent) return <div className="prose prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: fallbackContent }} />;
+    if (error) return <p className="text-muted-foreground text-sm">Content temporarily unavailable. Please contact support@shandecor.in</p>;
+    return null;
+  };
+
   return (
     <div className="min-h-screen py-10 md:py-14 px-4 md:px-8 lg:px-12">
       <div className="container mx-auto max-w-4xl">
@@ -38,13 +46,7 @@ export default function StaticContentPage({ slug, fallbackTitle }) {
             </p>
           ) : null}
 
-          {loading ? (
-            <p className="text-muted-foreground">Loading...</p>
-          ) : error ? (
-            <p className="text-destructive">{error}</p>
-          ) : (
-            <div className="space-y-5 text-base leading-7 whitespace-pre-line">{page?.body || ''}</div>
-          )}
+          {renderBody()}
         </motion.article>
       </div>
     </div>

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { ArrowRight, ChevronLeft, ChevronRight } from 'lucide-react';
+import { ArrowRight, ChevronLeft, ChevronRight, Truck, Shield, Award, RefreshCw } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { getProducts, getCategories } from '../lib/api';
 import ProductCard from '../components/product/ProductCard';
@@ -374,6 +374,84 @@ export default function HomePage() {
             </p>
             <p className="text-xs text-foreground/40 mt-1">
               (customer)
+            </p>
+          </motion.div>
+        </div>
+      </section>
+
+      {/* Why Choose Us */}
+      <section className="py-16 md:py-20 px-4 md:px-8 lg:px-16 bg-[#F5F5F5]" data-testid="why-choose-us-section">
+        <div className="max-w-screen-2xl mx-auto">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6 }}
+            className="text-center mb-12"
+          >
+            <h2 className="font-display text-3xl md:text-4xl mb-4">Why Choose Us</h2>
+            <p className="text-foreground/60 max-w-2xl mx-auto">
+              We're committed to providing you with exceptional decor pieces and outstanding service.
+            </p>
+          </motion.div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+            {[
+              {
+                icon: Truck,
+                title: "Free Delivery",
+                description: "On orders above ₹5,000. Fast and secure shipping to your doorstep.",
+                delay: 0
+              },
+              {
+                icon: RefreshCw,
+                title: "Easy Returns",
+                description: "14-day hassle-free return policy. Your satisfaction is our priority.",
+                delay: 0.1
+              },
+              {
+                icon: Award,
+                title: "Quality Guarantee",
+                description: "Premium materials and craftsmanship. Every piece is carefully inspected.",
+                delay: 0.2
+              },
+              {
+                icon: Shield,
+                title: "Secure Payments",
+                description: "100% secure payment processing. Your data is always protected.",
+                delay: 0.3
+              }
+            ].map((feature, index) => (
+              <motion.div
+                key={index}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.6, delay: feature.delay }}
+                className="text-center"
+              >
+                <div className="w-16 h-16 bg-foreground text-white rounded-full flex items-center justify-center mx-auto mb-6">
+                  <feature.icon size={24} />
+                </div>
+                <h3 className="font-display text-lg mb-3">{feature.title}</h3>
+                <p className="text-sm text-foreground/70 leading-relaxed">{feature.description}</p>
+              </motion.div>
+            ))}
+          </div>
+
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6, delay: 0.4 }}
+            className="text-center mt-12"
+          >
+            <div className="inline-flex items-center gap-2 px-4 py-2 bg-accent/10 text-accent rounded-sm">
+              <Award size={16} />
+              <span className="text-sm font-medium">Handcrafted with Love</span>
+            </div>
+            <p className="text-sm text-foreground/60 mt-3 max-w-md mx-auto">
+              Every piece is carefully crafted by skilled artisans who bring years of experience and passion to their work.
             </p>
           </motion.div>
         </div>
