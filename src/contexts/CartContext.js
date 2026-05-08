@@ -91,7 +91,7 @@ export function CartProvider({ children }) {
         for (const localItem of localItems) {
           try {
             await apiAddToCart({
-              productId: localItem.product_id,
+              product_id: localItem.product_id,
               quantity: localItem.quantity,
             });
           } catch {
@@ -127,7 +127,7 @@ export function CartProvider({ children }) {
   const addItem = useCallback(async (product, quantity = 1) => {
     if (isAuthenticated) {
       try {
-        await apiAddToCart({ productId: product.id, quantity });
+        await apiAddToCart({ product_id: product.id, quantity });
         const response = await getCart();
         const backendItems = response.data?.items || response.data || [];
         dispatch({ type: 'SET_ITEMS', payload: normalizeCartItems(backendItems) });
