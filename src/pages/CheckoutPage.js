@@ -81,7 +81,7 @@ export default function CheckoutPage() {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  const shippingFee = cartTotal >= 5000 ? 0 : 199;
+  const shippingFee = cartTotal >= 999 ? 0 : 99;
   const total = cartTotal + shippingFee;
 
   const handleSubmit = async (e) => {
@@ -338,7 +338,7 @@ export default function CheckoutPage() {
               <div className="grid grid-cols-3 gap-4 pt-4">
                 <div className="text-center p-4 bg-secondary/30 rounded-sm">
                   <Truck size={24} className="mx-auto mb-2 text-muted-foreground" />
-                  <p className="text-xs text-muted-foreground">Free Shipping over ₹5,000</p>
+                  <p className="text-xs text-muted-foreground">Free Shipping over ₹999</p>
                 </div>
                 <div className="text-center p-4 bg-secondary/30 rounded-sm">
                   <CreditCard size={24} className="mx-auto mb-2 text-muted-foreground" />
@@ -424,7 +424,7 @@ export default function CheckoutPage() {
                 </div>
                 {shippingFee > 0 && (
                   <p className="text-xs text-muted-foreground">
-                    Add ₹{(5000 - cartTotal).toLocaleString()} more for free shipping
+                    Add ₹{(999 - cartTotal).toLocaleString()} more for free shipping
                   </p>
                 )}
               </div>

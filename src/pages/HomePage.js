@@ -1,11 +1,66 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { ArrowRight, ChevronLeft, ChevronRight, Truck, Shield, Award, RefreshCw } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Truck, Shield, Award, HandMetal } from 'lucide-react';
 import { Button } from '../components/ui/button';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '../components/ui/accordion';
 import { getProducts, getCategories } from '../lib/api';
 import ProductCard from '../components/product/ProductCard';
 import { optimizeImageUrl } from '../lib/images';
+
+const faqs = [
+  {
+    category: 'Products',
+    items: [
+      {
+        q: 'Are your products handmade or machine-made?',
+        a: 'Every piece at Shan Decors is thoughtfully handcrafted by skilled artisans, carrying generations of craftsmanship — making each item truly one of a kind.',
+      },
+      {
+        q: 'Will my product look exactly like the images shown?',
+        a: 'Since our décor pieces are handmade, slight variations in colour, texture, or finish may occur — adding to the uniqueness and authenticity of each product.',
+      },
+      {
+        q: 'Do your products support sustainable practices?',
+        a: 'Yes, we prioritise sustainability by using eco-friendly materials and ethical production methods that support both the environment and artisan communities.',
+      },
+    ],
+  },
+  {
+    category: 'Shipping',
+    items: [
+      {
+        q: 'How long will it take to receive my order?',
+        a: 'As each product is carefully crafted and handled with care, delivery typically takes 7–14 business days depending on your location.',
+      },
+      {
+        q: 'Do you deliver across India?',
+        a: 'Yes, we ship pan India — bringing handcrafted elegance right to your doorstep. Orders above ₹999 qualify for free shipping.',
+      },
+      {
+        q: 'How can I track my order?',
+        a: 'Currently, we do not offer live tracking. However, we keep you updated at every stage — order confirmation, processing, dispatch, and delivery — via email, SMS, and WhatsApp.',
+      },
+    ],
+  },
+  {
+    category: 'Payments',
+    items: [
+      {
+        q: 'What payment options are available?',
+        a: 'We offer secure payment options including UPI, debit/credit cards, net banking, and digital wallets for your convenience.',
+      },
+      {
+        q: 'Is my payment information safe?',
+        a: 'Absolutely. We use trusted and encrypted payment gateways to ensure your transactions are completely secure.',
+      },
+      {
+        q: 'Is Cash on Delivery (COD) available?',
+        a: 'Yes, COD is available for selected locations — allowing you to pay once your handcrafted piece reaches you.',
+      },
+    ],
+  },
+];
 
 export default function HomePage() {
   const [featuredProducts, setFeaturedProducts] = useState([]);
@@ -399,26 +454,26 @@ export default function HomePage() {
             {[
               {
                 icon: Truck,
-                title: "Free Delivery",
-                description: "On orders above ₹5,000. Fast and secure shipping to your doorstep.",
+                title: "Free Shipping",
+                description: "On orders above ₹999. We ship pan India — your handcrafted piece delivered to your door.",
                 delay: 0
               },
               {
-                icon: RefreshCw,
-                title: "Easy Returns",
-                description: "14-day hassle-free return policy. Your satisfaction is our priority.",
+                icon: HandMetal,
+                title: "Handmade, Always",
+                description: "No conveyor belts, no shortcuts. Every piece is crafted by hand by skilled artisans who care.",
                 delay: 0.1
               },
               {
                 icon: Award,
                 title: "Quality Guarantee",
-                description: "Premium materials and craftsmanship. Every piece is carefully inspected.",
+                description: "From material selection to the finest detail — quality is never an afterthought.",
                 delay: 0.2
               },
               {
                 icon: Shield,
                 title: "Secure Payments",
-                description: "100% secure payment processing. Your data is always protected.",
+                description: "100% secure payment processing with UPI, cards, net banking, and COD options.",
                 delay: 0.3
               }
             ].map((feature, index) => (
@@ -453,6 +508,56 @@ export default function HomePage() {
             <p className="text-sm text-foreground/60 mt-3 max-w-md mx-auto">
               Every piece is carefully crafted by skilled artisans who bring years of experience and passion to their work.
             </p>
+          </motion.div>
+        </div>
+      </section>
+
+      {/* FAQ Section */}
+      <section className="py-16 md:py-24 px-4 md:px-8 lg:px-16 bg-white" data-testid="faq-section">
+        <div className="max-w-3xl mx-auto">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6 }}
+            className="text-center mb-14"
+          >
+            <p className="text-xs uppercase tracking-[0.2em] text-foreground/50 mb-4">Got Questions?</p>
+            <h2 className="font-display text-3xl md:text-4xl mb-4">Frequently Asked Questions</h2>
+            <p className="text-foreground/60 max-w-lg mx-auto">
+              Everything you need to know about our products, shipping, and payments. Can't find the answer? <Link to="/contact" className="underline underline-offset-4 hover:text-foreground transition-colors">Reach out to us.</Link>
+            </p>
+          </motion.div>
+
+          <motion.div
+            initial={{ opacity: 0, y: 16 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.5, delay: 0.1 }}
+          >
+            {faqs.map((group) => (
+              <div key={group.category} className="mb-8">
+                <p className="text-xs uppercase tracking-[0.2em] text-foreground/40 font-medium mb-3 pl-1">
+                  {group.category}
+                </p>
+                <Accordion type="single" collapsible className="border border-border">
+                  {group.items.map((item, i) => (
+                    <AccordionItem
+                      key={i}
+                      value={`${group.category}-${i}`}
+                      className="border-b border-border last:border-b-0 px-5"
+                    >
+                      <AccordionTrigger className="text-sm font-medium text-left py-4 hover:no-underline">
+                        {item.q}
+                      </AccordionTrigger>
+                      <AccordionContent className="text-sm text-foreground/65 leading-relaxed pb-4">
+                        {item.a}
+                      </AccordionContent>
+                    </AccordionItem>
+                  ))}
+                </Accordion>
+              </div>
+            ))}
           </motion.div>
         </div>
       </section>

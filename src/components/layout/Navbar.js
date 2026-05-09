@@ -172,10 +172,6 @@ export default function Navbar() {
               </Link>
             )}
 
-            <Button variant="ghost" size="icon" className="hover:bg-transparent hidden md:flex">
-              <Heart size={20} className="text-foreground/70" />
-            </Button>
-
             <Sheet>
               <SheetTrigger asChild>
                 <Button variant="ghost" size="icon" className="relative hover:bg-transparent" data-testid="cart-btn">
