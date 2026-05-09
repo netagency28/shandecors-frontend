@@ -136,9 +136,16 @@ export const uploadSingle = (file, type = 'product', path = '') => {
   formData.append('type', type);
   if (path) formData.append('path', path);
   return api.post('/upload/single', formData, {
-    headers: {
-      'Content-Type': 'multipart/form-data',
-    },
+    headers: { 'Content-Type': 'multipart/form-data' },
+  });
+};
+
+export const uploadMultiple = (files, type = 'product') => {
+  const formData = new FormData();
+  files.forEach((file) => formData.append('files', file));
+  formData.append('type', type);
+  return api.post('/upload/multiple', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
   });
 };
 

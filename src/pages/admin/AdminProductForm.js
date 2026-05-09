@@ -1,17 +1,287 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Save, Plus, X, Upload, Loader2 } from 'lucide-react';
+import { Save, X, Upload, Loader2, Film, Image, Link as LinkIcon, ChevronLeft, ChevronRight, Eye } from 'lucide-react';
 import { Button } from '../../components/ui/button';
 import { Input } from '../../components/ui/input';
 import { Label } from '../../components/ui/label';
 import { Textarea } from '../../components/ui/textarea';
 import { Switch } from '../../components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../components/ui/select';
+import { Dialog, DialogContent } from '../../components/ui/dialog';
 import { getProductById, createProduct, updateProduct, getCategories, uploadSingle } from '../../lib/api';
 import AdminRoute from '../../components/admin/AdminRoute';
 import AdminLayout from '../../components/admin/AdminLayout';
 
+const isVideoUrl = (url) => /\.(mp4|webm|mov|avi|ogg)(\?.*)?$/i.test(url);
+
+// ── MediaUploader ──────────────────────────────────────────────────────────────
+function MediaUploader({ urls, onChange, disabled }) {
+  const [isDragging, setIsDragging] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [uploadCount, setUploadCount] = useState(0);
+  const [urlInput, setUrlInput] = useState('');
+  const [urlMode, setUrlMode] = useState(false);
+  const [previewIndex, setPreviewIndex] = useState(null); // index of item in lightbox
+  const [uploadError, setUploadError] = useState('');
+  const fileInputRef = useRef(null);
+
+  const handleFiles = useCallback(async (fileList) => {
+    const files = Array.from(fileList);
+    if (!files.length) return;
+
+    const validTypes = /^(image\/(jpeg|png|gif|webp)|video\/(mp4|webm|quicktime|x-msvideo|ogg))$/;
+    const invalid = files.filter((f) => !validTypes.test(f.type));
+    if (invalid.length) {
+      setUploadError(`Unsupported file type: ${invalid.map((f) => f.name).join(', ')}`);
+      return;
+    }
+
+    setUploadError('');
+    setUploading(true);
+    setUploadCount(files.length);
+
+    try {
+      // Upload one at a time (avoids hitting multipart limits)
+      const uploaded = [];
+      for (const file of files) {
+        const res = await uploadSingle(file, file.type.startsWith('video/') ? 'video' : 'product');
+        const url = res.data?.data?.url;
+        if (url) uploaded.push(url);
+      }
+      onChange([...urls, ...uploaded]);
+    } catch (err) {
+      setUploadError(err.response?.data?.error?.message || 'Upload failed. Please try again.');
+    } finally {
+      setUploading(false);
+      setUploadCount(0);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  }, [urls, onChange]);
+
+  const onDragOver = (e) => { e.preventDefault(); setIsDragging(true); };
+  const onDragLeave = (e) => { e.preventDefault(); setIsDragging(false); };
+  const onDrop = (e) => {
+    e.preventDefault();
+    setIsDragging(false);
+    handleFiles(e.dataTransfer.files);
+  };
+
+  const remove = (index) => onChange(urls.filter((_, i) => i !== index));
+
+  const move = (from, dir) => {
+    const to = from + dir;
+    if (to < 0 || to >= urls.length) return;
+    const next = [...urls];
+    [next[from], next[to]] = [next[to], next[from]];
+    onChange(next);
+  };
+
+  const addUrl = () => {
+    const trimmed = urlInput.trim();
+    if (!trimmed) return;
+    onChange([...urls, trimmed]);
+    setUrlInput('');
+    setUrlMode(false);
+  };
+
+  return (
+    <div className="space-y-4">
+      {/* Drop zone */}
+      <div
+        onDragOver={onDragOver}
+        onDragLeave={onDragLeave}
+        onDrop={onDrop}
+        onClick={() => !disabled && fileInputRef.current?.click()}
+        className={`
+          relative border-2 border-dashed rounded-sm p-8 text-center cursor-pointer transition-colors
+          ${isDragging ? 'border-foreground bg-secondary/40' : 'border-border hover:border-foreground/40 hover:bg-secondary/20'}
+          ${disabled ? 'opacity-50 pointer-events-none' : ''}
+        `}
+      >
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/jpeg,image/png,image/gif,image/webp,video/mp4,video/webm,video/quicktime,video/ogg"
+          multiple
+          className="hidden"
+          onChange={(e) => handleFiles(e.target.files)}
+        />
+
+        {uploading ? (
+          <div className="flex flex-col items-center gap-2">
+            <Loader2 size={32} className="animate-spin text-muted-foreground" />
+            <p className="text-sm text-muted-foreground">
+              Uploading {uploadCount} file{uploadCount !== 1 ? 's' : ''}…
+            </p>
+          </div>
+        ) : (
+          <div className="flex flex-col items-center gap-2 pointer-events-none">
+            <div className="flex gap-3 mb-1">
+              <Image size={28} className="text-muted-foreground/60" />
+              <Film size={28} className="text-muted-foreground/60" />
+            </div>
+            <p className="text-sm font-medium">Drag &amp; drop images or videos here</p>
+            <p className="text-xs text-muted-foreground">or click to browse · JPEG, PNG, GIF, WebP, MP4, WebM, MOV · Max 100 MB each</p>
+          </div>
+        )}
+      </div>
+
+      {uploadError && (
+        <p className="text-sm text-destructive bg-destructive/10 px-3 py-2">{uploadError}</p>
+      )}
+
+      {/* Preview grid */}
+      {urls.length > 0 && (
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+          {urls.map((url, index) => (
+            <div
+              key={index}
+              className="group relative bg-secondary rounded-sm overflow-hidden aspect-square"
+            >
+              {isVideoUrl(url) ? (
+                <video
+                  src={url}
+                  muted
+                  loop
+                  playsInline
+                  className="w-full h-full object-cover"
+                  onMouseEnter={(e) => e.target.play()}
+                  onMouseLeave={(e) => { e.target.pause(); e.target.currentTime = 0; }}
+                />
+              ) : (
+                <img src={url} alt={`Media ${index + 1}`} className="w-full h-full object-cover" />
+              )}
+
+              {/* Badge */}
+              <div className="absolute top-1.5 left-1.5">
+                {isVideoUrl(url)
+                  ? <span className="bg-black/70 text-white text-[10px] px-1.5 py-0.5 rounded flex items-center gap-1"><Film size={10} /> Video</span>
+                  : index === 0 && <span className="bg-foreground text-background text-[10px] px-1.5 py-0.5 rounded">Cover</span>
+                }
+              </div>
+
+              {/* Overlay actions */}
+              <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-colors flex items-center justify-center gap-1 opacity-0 group-hover:opacity-100">
+                {/* Preview */}
+                <button
+                  type="button"
+                  onClick={(e) => { e.stopPropagation(); setPreviewIndex(index); }}
+                  className="w-7 h-7 bg-white/90 text-foreground rounded-full flex items-center justify-center hover:bg-white"
+                  title="Preview"
+                >
+                  <Eye size={13} />
+                </button>
+                {/* Move left */}
+                <button
+                  type="button"
+                  onClick={(e) => { e.stopPropagation(); move(index, -1); }}
+                  disabled={index === 0}
+                  className="w-7 h-7 bg-white/90 text-foreground rounded-full flex items-center justify-center hover:bg-white disabled:opacity-30"
+                  title="Move left"
+                >
+                  <ChevronLeft size={13} />
+                </button>
+                {/* Move right */}
+                <button
+                  type="button"
+                  onClick={(e) => { e.stopPropagation(); move(index, 1); }}
+                  disabled={index === urls.length - 1}
+                  className="w-7 h-7 bg-white/90 text-foreground rounded-full flex items-center justify-center hover:bg-white disabled:opacity-30"
+                  title="Move right"
+                >
+                  <ChevronRight size={13} />
+                </button>
+                {/* Remove */}
+                <button
+                  type="button"
+                  onClick={(e) => { e.stopPropagation(); remove(index); }}
+                  className="w-7 h-7 bg-destructive text-white rounded-full flex items-center justify-center hover:bg-destructive/80"
+                  title="Remove"
+                >
+                  <X size={13} />
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* URL input toggle */}
+      <div>
+        {urlMode ? (
+          <div className="flex gap-2">
+            <Input
+              value={urlInput}
+              onChange={(e) => setUrlInput(e.target.value)}
+              placeholder="Paste image or video URL…"
+              className="rounded-none flex-1"
+              onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addUrl(); } }}
+            />
+            <Button type="button" variant="outline" className="rounded-none" onClick={addUrl}>Add</Button>
+            <Button type="button" variant="ghost" className="rounded-none" onClick={() => setUrlMode(false)}>Cancel</Button>
+          </div>
+        ) : (
+          <button
+            type="button"
+            onClick={() => setUrlMode(true)}
+            className="text-xs text-muted-foreground hover:text-foreground underline underline-offset-2 flex items-center gap-1"
+          >
+            <LinkIcon size={11} /> Add by URL instead
+          </button>
+        )}
+      </div>
+
+      {/* Lightbox preview */}
+      <Dialog open={previewIndex !== null} onOpenChange={(open) => { if (!open) setPreviewIndex(null); }}>
+        <DialogContent className="max-w-3xl p-2 bg-black border-0">
+          {previewIndex !== null && (
+            isVideoUrl(urls[previewIndex]) ? (
+              <video
+                src={urls[previewIndex]}
+                controls
+                autoPlay
+                className="w-full max-h-[80vh] object-contain"
+              />
+            ) : (
+              <img
+                src={urls[previewIndex]}
+                alt="Preview"
+                className="w-full max-h-[80vh] object-contain"
+              />
+            )
+          )}
+          {/* Lightbox nav */}
+          {urls.length > 1 && (
+            <div className="flex justify-center gap-3 mt-2">
+              <Button
+                variant="ghost"
+                size="sm"
+                className="text-white hover:text-white hover:bg-white/20"
+                onClick={() => setPreviewIndex((i) => Math.max(0, i - 1))}
+                disabled={previewIndex === 0}
+              >
+                <ChevronLeft size={18} /> Prev
+              </Button>
+              <span className="text-white/60 text-sm self-center">{previewIndex + 1} / {urls.length}</span>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="text-white hover:text-white hover:bg-white/20"
+                onClick={() => setPreviewIndex((i) => Math.min(urls.length - 1, i + 1))}
+                disabled={previewIndex === urls.length - 1}
+              >
+                Next <ChevronRight size={18} />
+              </Button>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}
+
+// ── Main form ──────────────────────────────────────────────────────────────────
 export default function AdminProductForm() {
   return (
     <AdminRoute>
@@ -24,26 +294,24 @@ function AdminProductFormContent() {
   const { id } = useParams();
   const navigate = useNavigate();
   const isEditing = !!id;
-  
+
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [categories, setCategories] = useState([]);
   const [error, setError] = useState('');
-  const [uploading, setUploading] = useState(false);
-  
+
   const [formData, setFormData] = useState({
     name: '',
     slug: '',
     description: '',
     price: '',
-    comparePrice: '',
-    sku: '',
-    stock: 0,
-    categoryId: '',
+    sale_price: '',
+    stock: '0',
+    category_id: '',
     images: [],
     tags: [],
-    isActive: true,
-    isFeatured: false,
+    is_active: true,
+    is_featured: false,
   });
 
   useEffect(() => {
@@ -51,7 +319,7 @@ function AdminProductFormContent() {
       try {
         const catResponse = await getCategories();
         setCategories(catResponse.data || []);
-        
+
         if (isEditing) {
           setLoading(true);
           const prodResponse = await getProductById(id);
@@ -63,14 +331,14 @@ function AdminProductFormContent() {
             price: product.price?.toString() || '',
             sale_price: product.sale_price?.toString() || '',
             category_id: product.category_id || '',
-            images: product.images?.length > 0 ? product.images : [''],
+            images: product.images || [],
             stock: product.stock?.toString() || '0',
             is_featured: product.is_featured || false,
-            is_active: product.is_active !== false
+            is_active: product.is_active !== false,
           });
         }
-      } catch (error) {
-        console.error('Error fetching data:', error);
+      } catch (err) {
+        console.error('Error fetching data:', err);
         setError('Failed to load data');
       } finally {
         setLoading(false);
@@ -81,59 +349,10 @@ function AdminProductFormContent() {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
-    
-    // Auto-generate slug from name
+    setFormData((prev) => ({ ...prev, [name]: value }));
     if (name === 'name') {
-      const slug = value
-        .toLowerCase()
-        .replace(/[^a-z0-9]+/g, '-')
-        .replace(/(^-|-$)/g, '');
-      setFormData(prev => ({ ...prev, slug }));
-    }
-  };
-
-  const handleImageChange = (index, value) => {
-    const newImages = [...formData.images];
-    newImages[index] = value;
-    setFormData(prev => ({ ...prev, images: newImages }));
-  };
-
-  const addImageField = () => {
-    setFormData(prev => ({ ...prev, images: [...prev.images, ''] }));
-  };
-
-  const removeImageField = (index) => {
-    const newImages = formData.images.filter((_, i) => i !== index);
-    setFormData(prev => ({ ...prev, images: newImages.length > 0 ? newImages : [''] }));
-  };
-
-  const handleImageUpload = async (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    setUploading(true);
-    try {
-      const response = await uploadSingle(file, 'product');
-      const imageUrl = response.data?.data?.url;
-      if (imageUrl) {
-        setFormData((prev) => {
-          const next = [...(prev.images || [])];
-          const emptyIndex = next.findIndex((img) => !img);
-          if (emptyIndex >= 0) {
-            next[emptyIndex] = imageUrl;
-          } else {
-            next.push(imageUrl);
-          }
-          return { ...prev, images: next };
-        });
-      }
-    } catch (uploadErr) {
-      console.error('Image upload failed:', uploadErr);
-      setError('Image upload failed. Please try again.');
-    } finally {
-      setUploading(false);
-      e.target.value = '';
+      const slug = value.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+      setFormData((prev) => ({ ...prev, slug }));
     }
   };
 
@@ -141,7 +360,6 @@ function AdminProductFormContent() {
     e.preventDefault();
     setError('');
     setSaving(true);
-
     try {
       const productData = {
         name: formData.name,
@@ -150,10 +368,10 @@ function AdminProductFormContent() {
         price: parseFloat(formData.price),
         sale_price: formData.sale_price ? parseFloat(formData.sale_price) : null,
         category_id: formData.category_id,
-        images: formData.images.filter(img => img.trim() !== ''),
+        images: formData.images.filter((u) => u.trim() !== ''),
         stock: parseInt(formData.stock) || 0,
         is_featured: formData.is_featured,
-        is_active: formData.is_active
+        is_active: formData.is_active,
       };
 
       if (isEditing) {
@@ -161,11 +379,10 @@ function AdminProductFormContent() {
       } else {
         await createProduct(productData);
       }
-      
       navigate('/admin/products');
     } catch (err) {
       console.error('Error saving product:', err);
-      setError(err.response?.data?.detail || 'Failed to save product');
+      setError(err.response?.data?.detail || err.response?.data?.message || 'Failed to save product');
     } finally {
       setSaving(false);
     }
@@ -188,89 +405,52 @@ function AdminProductFormContent() {
       title={isEditing ? 'Edit Product' : 'New Product'}
       subtitle="Create and manage product details"
       actions={(
-        <Button 
+        <Button
           onClick={handleSubmit}
           disabled={saving}
           className="rounded-none bg-foreground text-background hover:bg-foreground/90"
           data-testid="save-product-btn"
         >
           <Save size={16} className="mr-2" />
-          {saving ? 'Saving...' : 'Save Product'}
+          {saving ? 'Saving…' : 'Save Product'}
         </Button>
       )}
     >
       <div className="max-w-screen-lg" data-testid="admin-product-form">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-        >
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
+
           {error && (
-            <div className="mb-6 p-4 bg-destructive/10 text-destructive text-sm rounded-sm">
-              {error}
-            </div>
+            <div className="mb-6 p-4 bg-destructive/10 text-destructive text-sm rounded-sm">{error}</div>
           )}
 
           <form onSubmit={handleSubmit} className="space-y-8">
+
             {/* Basic Info */}
             <div className="bg-background p-6 rounded-sm space-y-4">
               <h2 className="font-display text-lg mb-4">Basic Information</h2>
-              
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <Label htmlFor="name">Product Name *</Label>
-                  <Input
-                    id="name"
-                    name="name"
-                    value={formData.name}
-                    onChange={handleChange}
-                    required
-                    className="mt-1 rounded-none"
-                    data-testid="product-name-input"
-                  />
+                  <Input id="name" name="name" value={formData.name} onChange={handleChange} required className="mt-1 rounded-none" data-testid="product-name-input" />
                 </div>
                 <div>
                   <Label htmlFor="slug">Slug *</Label>
-                  <Input
-                    id="slug"
-                    name="slug"
-                    value={formData.slug}
-                    onChange={handleChange}
-                    required
-                    className="mt-1 rounded-none"
-                    data-testid="product-slug-input"
-                  />
+                  <Input id="slug" name="slug" value={formData.slug} onChange={handleChange} required className="mt-1 rounded-none" data-testid="product-slug-input" />
                 </div>
               </div>
-
               <div>
                 <Label htmlFor="description">Description *</Label>
-                <Textarea
-                  id="description"
-                  name="description"
-                  value={formData.description}
-                  onChange={handleChange}
-                  required
-                  rows={4}
-                  className="mt-1 rounded-none"
-                  data-testid="product-description-input"
-                />
+                <Textarea id="description" name="description" value={formData.description} onChange={handleChange} required rows={4} className="mt-1 rounded-none" data-testid="product-description-input" />
               </div>
-
               <div>
                 <Label htmlFor="category_id">Category *</Label>
-                <Select 
-                  value={formData.category_id} 
-                  onValueChange={(value) => setFormData(prev => ({ ...prev, category_id: value }))}
-                >
+                <Select value={formData.category_id} onValueChange={(value) => setFormData((prev) => ({ ...prev, category_id: value }))}>
                   <SelectTrigger className="mt-1 rounded-none" data-testid="product-category-select">
                     <SelectValue placeholder="Select category" />
                   </SelectTrigger>
                   <SelectContent>
                     {categories.map((cat) => (
-                      <SelectItem key={cat.id} value={cat.id}>
-                        {cat.name}
-                      </SelectItem>
+                      <SelectItem key={cat.id} value={cat.id}>{cat.name}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
@@ -280,161 +460,75 @@ function AdminProductFormContent() {
             {/* Pricing */}
             <div className="bg-background p-6 rounded-sm space-y-4">
               <h2 className="font-display text-lg mb-4">Pricing & Inventory</h2>
-              
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
                   <Label htmlFor="price">Price (₹) *</Label>
-                  <Input
-                    id="price"
-                    name="price"
-                    type="number"
-                    step="0.01"
-                    value={formData.price}
-                    onChange={handleChange}
-                    required
-                    className="mt-1 rounded-none"
-                    data-testid="product-price-input"
-                  />
+                  <Input id="price" name="price" type="number" step="0.01" value={formData.price} onChange={handleChange} required className="mt-1 rounded-none" data-testid="product-price-input" />
                 </div>
                 <div>
                   <Label htmlFor="sale_price">Sale Price (₹)</Label>
-                  <Input
-                    id="sale_price"
-                    name="sale_price"
-                    type="number"
-                    step="0.01"
-                    value={formData.sale_price}
-                    onChange={handleChange}
-                    className="mt-1 rounded-none"
-                    data-testid="product-sale-price-input"
-                  />
+                  <Input id="sale_price" name="sale_price" type="number" step="0.01" value={formData.sale_price} onChange={handleChange} className="mt-1 rounded-none" data-testid="product-sale-price-input" />
                 </div>
                 <div>
                   <Label htmlFor="stock">Stock *</Label>
-                  <Input
-                    id="stock"
-                    name="stock"
-                    type="number"
-                    value={formData.stock}
-                    onChange={handleChange}
-                    required
-                    className="mt-1 rounded-none"
-                    data-testid="product-stock-input"
-                  />
+                  <Input id="stock" name="stock" type="number" value={formData.stock} onChange={handleChange} required className="mt-1 rounded-none" data-testid="product-stock-input" />
                 </div>
               </div>
             </div>
 
-            {/* Images */}
-            <div className="bg-background p-6 rounded-sm space-y-4">
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="font-display text-lg">Images</h2>
-                <div className="flex items-center gap-2">
-                  <input
-                    id="product-image-upload"
-                    type="file"
-                    accept="image/*"
-                    className="hidden"
-                    onChange={handleImageUpload}
-                  />
+            {/* Media */}
+            <div className="bg-background p-6 rounded-sm">
+              <div className="flex items-center justify-between mb-5">
+                <div>
+                  <h2 className="font-display text-lg">Images &amp; Videos</h2>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    {formData.images.length > 0
+                      ? `${formData.images.length} file${formData.images.length !== 1 ? 's' : ''} · first image is the cover`
+                      : 'Add product images and/or a demo video'}
+                  </p>
+                </div>
+                {formData.images.length > 0 && (
                   <Button
                     type="button"
-                    variant="outline"
+                    variant="ghost"
                     size="sm"
-                    className="rounded-none"
-                    onClick={() => document.getElementById('product-image-upload')?.click()}
-                    disabled={uploading}
+                    className="text-xs text-muted-foreground"
+                    onClick={() => setFormData((prev) => ({ ...prev, images: [] }))}
                   >
-                    {uploading ? <Loader2 size={16} className="mr-1 animate-spin" /> : <Upload size={16} className="mr-1" />}
-                    Upload
+                    Clear all
                   </Button>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={addImageField}
-                    className="rounded-none"
-                  >
-                    <Plus size={16} className="mr-1" />
-                    Add URL
-                  </Button>
-                </div>
+                )}
               </div>
-              
-              <div className="space-y-3">
-                {formData.images.map((img, index) => (
-                  <div key={index} className="flex gap-2">
-                    <Input
-                      value={img}
-                      onChange={(e) => handleImageChange(index, e.target.value)}
-                      placeholder="Image URL"
-                      className="flex-1 rounded-none"
-                      data-testid={`product-image-${index}`}
-                    />
-                    {formData.images.length > 1 && (
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => removeImageField(index)}
-                        className="text-muted-foreground hover:text-destructive"
-                      >
-                        <X size={16} />
-                      </Button>
-                    )}
-                  </div>
-                ))}
-              </div>
-              
-              {formData.images[0] && (
-                <div className="flex gap-2 mt-4">
-                  {formData.images.filter(img => img).slice(0, 4).map((img, i) => (
-                    <div key={i} className="w-20 h-20 bg-secondary rounded-sm overflow-hidden">
-                      <img src={img} alt={`Preview ${i}`} className="w-full h-full object-cover" />
-                    </div>
-                  ))}
-                </div>
-              )}
+              <MediaUploader
+                urls={formData.images}
+                onChange={(next) => setFormData((prev) => ({ ...prev, images: next }))}
+              />
             </div>
 
             {/* Settings */}
             <div className="bg-background p-6 rounded-sm space-y-4">
               <h2 className="font-display text-lg mb-4">Settings</h2>
-              
               <div className="flex items-center justify-between">
                 <div>
                   <Label>Active</Label>
                   <p className="text-sm text-muted-foreground">Product is visible in store</p>
                 </div>
-                <Switch
-                  checked={formData.is_active}
-                  onCheckedChange={(checked) => setFormData(prev => ({ ...prev, is_active: checked }))}
-                  data-testid="product-active-switch"
-                />
+                <Switch checked={formData.is_active} onCheckedChange={(checked) => setFormData((prev) => ({ ...prev, is_active: checked }))} data-testid="product-active-switch" />
               </div>
-              
               <div className="flex items-center justify-between">
                 <div>
                   <Label>Featured</Label>
                   <p className="text-sm text-muted-foreground">Show on homepage</p>
                 </div>
-                <Switch
-                  checked={formData.is_featured}
-                  onCheckedChange={(checked) => setFormData(prev => ({ ...prev, is_featured: checked }))}
-                  data-testid="product-featured-switch"
-                />
+                <Switch checked={formData.is_featured} onCheckedChange={(checked) => setFormData((prev) => ({ ...prev, is_featured: checked }))} data-testid="product-featured-switch" />
               </div>
             </div>
 
-            {/* Submit (mobile) */}
+            {/* Mobile submit */}
             <div className="md:hidden">
-              <Button 
-                type="submit"
-                disabled={saving}
-                className="w-full rounded-none bg-foreground text-background hover:bg-foreground/90 py-6"
-              >
+              <Button type="submit" disabled={saving} className="w-full rounded-none bg-foreground text-background hover:bg-foreground/90 py-6">
                 <Save size={16} className="mr-2" />
-                {saving ? 'Saving...' : 'Save Product'}
+                {saving ? 'Saving…' : 'Save Product'}
               </Button>
             </div>
           </form>
