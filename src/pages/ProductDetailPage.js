@@ -1,31 +1,235 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { motion } from 'framer-motion';
-import { Minus, Plus, ShoppingBag, Heart, Check, ChevronRight, Star } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import {
+  Minus, Plus, ShoppingBag, Heart, Check, ChevronRight,
+  Star, Play, ZoomIn, X, ChevronLeft,
+} from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
+import { Dialog, DialogContent } from '../components/ui/dialog';
 import { getProduct, getProducts } from '../lib/api';
-import { createReview, updateReview, deleteReview, getUserReview } from '../lib/api';
+import { createReview, updateReview, getUserReview } from '../lib/api';
+
 import { useCart } from '../contexts/CartContext';
 import { useAuth } from '../contexts/AuthContext';
+import { useWishlist } from '../contexts/WishlistContext';
 import ProductCard from '../components/product/ProductCard';
 import ReviewForm from '../components/review/ReviewForm';
 import ReviewsList from '../components/review/ReviewsList';
 import { optimizeImageUrl } from '../lib/images';
 
+// ─── helpers ──────────────────────────────────────────────────────────────────
+const isVideoUrl = (url) => /\.(mp4|webm|mov|avi|ogg)(\?.*)?$/i.test(url || '');
+
+const safeImgUrl = (url, opts) =>
+  isVideoUrl(url) ? url : optimizeImageUrl(url, opts);
+
+// ─── MediaGallery ──────────────────────────────────────────────────────────────
+function MediaGallery({ images = [], productName }) {
+  const [selected, setSelected] = useState(0);
+  const [lightbox, setLightbox] = useState(false);
+  const videoRef = useRef(null);
+
+  // Reset to first item when product changes
+  useEffect(() => { setSelected(0); }, [images]);
+
+  // Pause/reset video when switching away from a video slide
+  useEffect(() => {
+    if (videoRef.current) {
+      videoRef.current.pause();
+      videoRef.current.currentTime = 0;
+    }
+  }, [selected]);
+
+  if (!images || images.length === 0) {
+    return (
+      <div className="bg-[#F5F5F5] aspect-square flex items-center justify-center text-muted-foreground">
+        No media
+      </div>
+    );
+  }
+
+  const currentUrl = images[selected];
+  const isVideo = isVideoUrl(currentUrl);
+
+  const prev = () => setSelected((s) => Math.max(0, s - 1));
+  const next = () => setSelected((s) => Math.min(images.length - 1, s + 1));
+
+  return (
+    <div>
+      {/* ── Main viewer ── */}
+      <div className="bg-[#F5F5F5] aspect-square relative overflow-hidden group">
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={selected}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.25 }}
+            className="w-full h-full"
+          >
+            {isVideo ? (
+              <video
+                ref={videoRef}
+                src={currentUrl}
+                controls
+                playsInline
+                className="w-full h-full object-contain"
+              />
+            ) : (
+              <img
+                src={safeImgUrl(currentUrl, { width: 1200, quality: 78 })}
+                alt={productName}
+                className="w-full h-full object-contain p-8"
+                fetchPriority="high"
+                decoding="async"
+                data-testid="product-image"
+              />
+            )}
+          </motion.div>
+        </AnimatePresence>
+
+        {/* Nav arrows (shown when multiple items) */}
+        {images.length > 1 && (
+          <>
+            <button
+              onClick={prev}
+              disabled={selected === 0}
+              className="absolute left-3 top-1/2 -translate-y-1/2 w-9 h-9 bg-white/80 hover:bg-white flex items-center justify-center shadow-sm opacity-0 group-hover:opacity-100 transition-opacity disabled:opacity-0"
+            >
+              <ChevronLeft size={18} />
+            </button>
+            <button
+              onClick={next}
+              disabled={selected === images.length - 1}
+              className="absolute right-3 top-1/2 -translate-y-1/2 w-9 h-9 bg-white/80 hover:bg-white flex items-center justify-center shadow-sm opacity-0 group-hover:opacity-100 transition-opacity disabled:opacity-0"
+            >
+              <ChevronRight size={18} />
+            </button>
+          </>
+        )}
+
+        {/* Zoom button for images */}
+        {!isVideo && (
+          <button
+            onClick={() => setLightbox(true)}
+            className="absolute top-3 right-3 w-9 h-9 bg-white/80 hover:bg-white flex items-center justify-center shadow-sm opacity-0 group-hover:opacity-100 transition-opacity"
+            title="View full size"
+          >
+            <ZoomIn size={16} />
+          </button>
+        )}
+
+        {/* Dot counter */}
+        {images.length > 1 && (
+          <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5">
+            {images.map((_, i) => (
+              <button
+                key={i}
+                onClick={() => setSelected(i)}
+                className={`w-1.5 h-1.5 rounded-full transition-colors ${i === selected ? 'bg-foreground' : 'bg-foreground/25'}`}
+              />
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* ── Thumbnail strip ── */}
+      {images.length > 1 && (
+        <div className="flex gap-2 mt-3 overflow-x-auto pb-1 scrollbar-hide">
+          {images.map((url, i) => {
+            const vid = isVideoUrl(url);
+            return (
+              <button
+                key={i}
+                type="button"
+                onClick={() => setSelected(i)}
+                className={`relative flex-shrink-0 w-20 h-20 bg-[#F5F5F5] overflow-hidden border-2 transition-colors ${
+                  selected === i ? 'border-foreground' : 'border-transparent hover:border-foreground/30'
+                }`}
+              >
+                {vid ? (
+                  <>
+                    <video
+                      src={url}
+                      muted
+                      playsInline
+                      preload="metadata"
+                      className="w-full h-full object-cover"
+                    />
+                    <div className="absolute inset-0 flex items-center justify-center bg-black/25">
+                      <Play size={16} className="text-white fill-white" />
+                    </div>
+                  </>
+                ) : (
+                  <img
+                    src={safeImgUrl(url, { width: 160, quality: 65 })}
+                    alt={`${productName} ${i + 1}`}
+                    className="w-full h-full object-contain p-1"
+                    loading="lazy"
+                    decoding="async"
+                  />
+                )}
+              </button>
+            );
+          })}
+        </div>
+      )}
+
+      {/* ── Lightbox ── */}
+      <Dialog open={lightbox} onOpenChange={setLightbox}>
+        <DialogContent className="max-w-4xl p-0 bg-black border-0 overflow-hidden">
+          <button
+            onClick={() => setLightbox(false)}
+            className="absolute top-3 right-3 z-10 w-9 h-9 bg-white/10 hover:bg-white/20 flex items-center justify-center text-white rounded-full"
+          >
+            <X size={18} />
+          </button>
+
+          {images.length > 1 && (
+            <>
+              <button onClick={prev} disabled={selected === 0} className="absolute left-3 top-1/2 -translate-y-1/2 z-10 w-10 h-10 bg-white/10 hover:bg-white/20 flex items-center justify-center text-white disabled:opacity-20">
+                <ChevronLeft size={20} />
+              </button>
+              <button onClick={next} disabled={selected === images.length - 1} className="absolute right-3 top-1/2 -translate-y-1/2 z-10 w-10 h-10 bg-white/10 hover:bg-white/20 flex items-center justify-center text-white disabled:opacity-20">
+                <ChevronRight size={20} />
+              </button>
+            </>
+          )}
+
+          <img
+            src={safeImgUrl(currentUrl, { width: 1600, quality: 90 })}
+            alt={productName}
+            className="w-full max-h-[85vh] object-contain"
+          />
+
+          {images.length > 1 && (
+            <p className="text-white/50 text-xs text-center py-2">{selected + 1} / {images.length}</p>
+          )}
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}
+
+// ─── Page ──────────────────────────────────────────────────────────────────────
 export default function ProductDetailPage() {
   const { slug } = useParams();
   const { user, isAuthenticated } = useAuth();
+  const { addItem } = useCart();
+  const { isInWishlist, addToWishlist, removeFromWishlist } = useWishlist();
+
   const [product, setProduct] = useState(null);
   const [relatedProducts, setRelatedProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [quantity, setQuantity] = useState(1);
   const [addedToCart, setAddedToCart] = useState(false);
-  const [selectedImage, setSelectedImage] = useState(0);
   const [userReview, setUserReview] = useState(null);
   const [showReviewForm, setShowReviewForm] = useState(false);
-  const [reviewKey, setReviewKey] = useState(0); // To refresh reviews list
-  const { addItem } = useCart();
+  const [reviewKey, setReviewKey] = useState(0);
+  const [totalReviews, setTotalReviews] = useState(0);
+  const [avgRating, setAvgRating] = useState(0);
 
   useEffect(() => {
     const fetchProduct = async () => {
@@ -33,25 +237,19 @@ export default function ProductDetailPage() {
       try {
         const response = await getProduct(slug);
         setProduct(response.data);
-        setSelectedImage(0);
 
         if (response.data?.category_id) {
-          const relatedRes = await getProducts({ 
-            category: response.data.category_id, 
-            limit: 5 
-          });
+          const relatedRes = await getProducts({ category: response.data.category_id, limit: 5 });
           setRelatedProducts(
-            relatedRes.data.products?.filter(p => p.id !== response.data.id).slice(0, 4) || []
+            relatedRes.data.products?.filter((p) => p.id !== response.data.id).slice(0, 4) || []
           );
         }
 
-        // Fetch user's review if authenticated
         if (isAuthenticated && response.data?.id) {
           try {
-            const reviewResponse = await getUserReview(response.data.id);
-            setUserReview(reviewResponse.data);
-          } catch (err) {
-            // User hasn't reviewed yet
+            const rv = await getUserReview(response.data.id);
+            setUserReview(rv.data);
+          } catch {
             setUserReview(null);
           }
         }
@@ -75,25 +273,15 @@ export default function ProductDetailPage() {
 
   const handleReviewSubmit = async (reviewData) => {
     try {
-      if (userReview) {
-        // Update existing review
-        const response = await updateReview(userReview.id, reviewData);
-        setUserReview(response.data);
-      } else {
-        // Create new review
-        const response = await createReview(reviewData);
-        setUserReview(response.data);
-      }
+      const response = userReview
+        ? await updateReview(userReview.id, reviewData)
+        : await createReview(reviewData);
+      setUserReview(response.data);
       setShowReviewForm(false);
-      setReviewKey(prev => prev + 1); // Refresh reviews list
+      setReviewKey((k) => k + 1);
     } catch (error) {
-      console.error('Error submitting review:', error);
       alert(error.response?.data?.error || 'Failed to submit review');
     }
-  };
-
-  const handleReviewUpdate = () => {
-    setReviewKey(prev => prev + 1); // Refresh reviews list
   };
 
   if (loading) {
@@ -103,10 +291,10 @@ export default function ProductDetailPage() {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-16">
             <div className="aspect-square bg-secondary animate-pulse" />
             <div className="space-y-4 py-8">
-              <div className="h-4 bg-secondary rounded w-1/4" />
-              <div className="h-10 bg-secondary rounded w-3/4" />
-              <div className="h-8 bg-secondary rounded w-1/4" />
-              <div className="h-32 bg-secondary rounded" />
+              <div className="h-4 bg-secondary rounded w-1/4 animate-pulse" />
+              <div className="h-10 bg-secondary rounded w-3/4 animate-pulse" />
+              <div className="h-8 bg-secondary rounded w-1/4 animate-pulse" />
+              <div className="h-32 bg-secondary rounded animate-pulse" />
             </div>
           </div>
         </div>
@@ -119,9 +307,7 @@ export default function ProductDetailPage() {
       <div className="min-h-screen flex items-center justify-center bg-white">
         <div className="text-center">
           <h2 className="font-display text-3xl mb-4">Product not found</h2>
-          <Link to="/products">
-            <Button variant="outline">Back to Products</Button>
-          </Link>
+          <Link to="/products"><Button variant="outline">Back to Products</Button></Link>
         </div>
       </div>
     );
@@ -130,6 +316,16 @@ export default function ProductDetailPage() {
   const price = product.sale_price || product.price;
   const hasDiscount = product.sale_price && product.sale_price < product.price;
   const discountPercent = hasDiscount ? Math.round((1 - product.sale_price / product.price) * 100) : 0;
+  const wishlisted = isInWishlist?.(product.id);
+
+  const renderStars = (rating, size = 14) =>
+    [...Array(5)].map((_, i) => (
+      <Star
+        key={i}
+        size={size}
+        className={i < Math.round(rating) ? 'fill-yellow-400 text-yellow-400' : 'fill-muted text-muted'}
+      />
+    ));
 
   return (
     <div className="min-h-screen bg-white" data-testid="product-detail-page">
@@ -141,7 +337,15 @@ export default function ProductDetailPage() {
             <ChevronRight size={14} />
             <Link to="/products" className="hover:text-foreground">Products</Link>
             <ChevronRight size={14} />
-            <span className="text-foreground">{product.name}</span>
+            {product.category && (
+              <>
+                <Link to={`/products?category=${product.category.slug}`} className="hover:text-foreground capitalize">
+                  {product.category.name}
+                </Link>
+                <ChevronRight size={14} />
+              </>
+            )}
+            <span className="text-foreground truncate max-w-[200px]">{product.name}</span>
           </nav>
         </div>
       </div>
@@ -150,71 +354,42 @@ export default function ProductDetailPage() {
       <section className="py-8 md:py-12 lg:py-16 px-4 md:px-8 lg:px-16">
         <div className="container mx-auto max-w-screen-2xl">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-16">
-            {/* Image Gallery */}
-            <motion.div
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.6 }}
-            >
-              <div className="bg-[#F5F5F5] aspect-square relative overflow-hidden">
-                <img
-                  src={optimizeImageUrl(product.images?.[selectedImage] || product.images?.[0], { width: 1200, quality: 78 })}
-                  alt={product.name}
-                  className="w-full h-full object-contain p-8"
-                  data-testid="product-image"
-                  fetchPriority="high"
-                  decoding="async"
-                />
-                {hasDiscount && (
-                  <span className="absolute top-4 left-4 bg-accent text-white text-xs px-3 py-1 uppercase tracking-wider font-medium">
-                    -{discountPercent}%
+
+            {/* Gallery */}
+            <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.6 }}>
+              {hasDiscount && (
+                <div className="mb-3">
+                  <span className="bg-accent text-white text-xs px-3 py-1 uppercase tracking-wider font-medium">
+                    -{discountPercent}% off
                   </span>
-                )}
-              </div>
-              
-              {/* Thumbnails */}
-              {product.images?.length > 1 && (
-                <div className="grid grid-cols-4 gap-3 mt-4">
-                  {product.images.slice(0, 4).map((img, i) => (
-                    <button
-                      type="button"
-                      key={i}
-                      onClick={() => setSelectedImage(i)}
-                      className={`bg-[#F5F5F5] aspect-square cursor-pointer hover:opacity-80 transition-opacity border ${selectedImage === i ? 'border-foreground' : 'border-transparent'}`}
-                    >
-                      <img
-                        src={optimizeImageUrl(img, { width: 260, quality: 68 })}
-                        alt={`${product.name} ${i + 1}`}
-                        className="w-full h-full object-contain p-2"
-                        loading="lazy"
-                        decoding="async"
-                      />
-                    </button>
-                  ))}
                 </div>
               )}
+              <MediaGallery images={product.images || []} productName={product.name} />
             </motion.div>
 
-            {/* Product Details */}
+            {/* Details */}
             <motion.div
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.6, delay: 0.2 }}
               className="lg:py-4"
             >
-              {/* Rating */}
-              <div className="flex items-center gap-1 mb-4">
-                {[...Array(5)].map((_, i) => (
-                  <Star key={i} size={14} className="fill-yellow-400 text-yellow-400" />
-                ))}
-                <span className="text-sm text-foreground/60 ml-2">(12 reviews)</span>
-              </div>
-              
+              {/* Rating summary */}
+              {totalReviews > 0 && (
+                <div className="flex items-center gap-2 mb-4">
+                  <div className="flex items-center gap-0.5">{renderStars(avgRating)}</div>
+                  <span className="text-sm text-foreground/60">
+                    {avgRating.toFixed(1)} ({totalReviews} review{totalReviews !== 1 ? 's' : ''})
+                  </span>
+                </div>
+              )}
+
               <h1 className="font-display text-4xl md:text-5xl mb-4" data-testid="product-name">
                 {product.name}
               </h1>
 
-              <div className="flex items-baseline gap-3 mb-6">
+              {/* Price */}
+              <div className="flex items-baseline gap-3 mb-2">
                 <span className="text-2xl md:text-3xl font-medium" data-testid="product-price">
                   ₹{price.toLocaleString()}
                 </span>
@@ -225,24 +400,35 @@ export default function ProductDetailPage() {
                 )}
               </div>
 
-              <p className="text-foreground/70 leading-relaxed mb-8" data-testid="product-description">
+              {/* Tags */}
+              {product.tags?.length > 0 && (
+                <div className="flex flex-wrap gap-1.5 mb-5">
+                  {product.tags.map((tag) => (
+                    <span key={tag} className="text-xs border border-border px-2 py-0.5 text-muted-foreground rounded-sm">
+                      {tag}
+                    </span>
+                  ))}
+                </div>
+              )}
+
+              <p className="text-foreground/70 leading-relaxed mb-6" data-testid="product-description">
                 {product.description}
               </p>
 
-              {/* Stock Status */}
-              <div className="mb-8">
+              {/* Stock */}
+              <div className="mb-6">
                 {product.stock > 0 ? (
                   <p className="text-sm flex items-center gap-2 text-green-600">
                     <Check size={16} />
                     In Stock ({product.stock} available)
                   </p>
                 ) : (
-                  <p className="text-sm text-red-600">Out of Stock</p>
+                  <p className="text-sm text-red-600 font-medium">Out of Stock</p>
                 )}
               </div>
 
-              {/* Quantity & Add to Cart */}
-              <div className="flex flex-col sm:flex-row gap-4 mb-8">
+              {/* Quantity + Add to cart */}
+              <div className="flex flex-col sm:flex-row gap-3 mb-6">
                 <div className="flex items-center border border-foreground/20">
                   <Button
                     variant="ghost"
@@ -253,9 +439,7 @@ export default function ProductDetailPage() {
                   >
                     <Minus size={16} />
                   </Button>
-                  <span className="w-14 text-center font-medium" data-testid="quantity-value">
-                    {quantity}
-                  </span>
+                  <span className="w-14 text-center font-medium" data-testid="quantity-value">{quantity}</span>
                   <Button
                     variant="ghost"
                     size="icon"
@@ -271,91 +455,92 @@ export default function ProductDetailPage() {
                 <Button
                   onClick={handleAddToCart}
                   disabled={product.stock === 0 || addedToCart}
-                  className="flex-1 h-14 bg-foreground text-white hover:bg-foreground/90 uppercase tracking-[0.15em] text-sm font-medium"
+                  className="flex-1 h-14 bg-foreground text-white hover:bg-foreground/90 uppercase tracking-[0.15em] text-sm font-medium rounded-none"
                   data-testid="add-to-cart-btn"
                 >
                   {addedToCart ? (
-                    <>
-                      <Check size={18} className="mr-2" />
-                      Added to Cart
-                    </>
+                    <><Check size={18} className="mr-2" /> Added to Cart</>
                   ) : (
-                    <>
-                      <ShoppingBag size={18} className="mr-2" />
-                      Add to Cart
-                    </>
+                    <><ShoppingBag size={18} className="mr-2" /> Add to Cart</>
                   )}
                 </Button>
 
                 <Button
                   variant="outline"
                   size="icon"
-                  className="h-14 w-14 border-foreground/20 hover:bg-secondary"
+                  onClick={() => wishlisted ? removeFromWishlist?.(product.id) : addToWishlist?.(product.id)}
+                  className={`h-14 w-14 border-foreground/20 hover:bg-secondary rounded-none ${wishlisted ? 'text-red-500 border-red-200' : ''}`}
+                  title={wishlisted ? 'Remove from wishlist' : 'Add to wishlist'}
                 >
-                  <Heart size={18} />
+                  <Heart size={18} className={wishlisted ? 'fill-red-500' : ''} />
                 </Button>
               </div>
 
-              {/* Additional Info */}
-              <Tabs defaultValue="description" className="mt-8">
-                <TabsList className="w-full justify-start border-b border-foreground/10 rounded-none bg-transparent h-auto p-0 gap-8">
-                  <TabsTrigger 
-                    value="description" 
-                    className="rounded-none border-b-2 border-transparent data-[state=active]:border-foreground data-[state=active]:bg-transparent pb-3 px-0 text-sm uppercase tracking-wider"
-                  >
-                    Description
-                  </TabsTrigger>
-                  <TabsTrigger 
-                    value="shipping" 
-                    className="rounded-none border-b-2 border-transparent data-[state=active]:border-foreground data-[state=active]:bg-transparent pb-3 px-0 text-sm uppercase tracking-wider"
-                  >
-                    Shipping
-                  </TabsTrigger>
-                  <TabsTrigger 
-                    value="returns" 
-                    className="rounded-none border-b-2 border-transparent data-[state=active]:border-foreground data-[state=active]:bg-transparent pb-3 px-0 text-sm uppercase tracking-wider"
-                  >
-                    Returns
-                  </TabsTrigger>
-                  <TabsTrigger 
-                    value="reviews" 
-                    className="rounded-none border-b-2 border-transparent data-[state=active]:border-foreground data-[state=active]:bg-transparent pb-3 px-0 text-sm uppercase tracking-wider"
-                  >
-                    Reviews
-                  </TabsTrigger>
+              {/* Trust bullets */}
+              <div className="border-t border-border/30 pt-5 mb-6 grid grid-cols-3 gap-3 text-center text-xs text-foreground/60">
+                <div>
+                  <p className="font-medium text-foreground/80 mb-0.5">Free Shipping</p>
+                  <p>Orders over ₹999</p>
+                </div>
+                <div>
+                  <p className="font-medium text-foreground/80 mb-0.5">Handmade</p>
+                  <p>One at a time</p>
+                </div>
+                <div>
+                  <p className="font-medium text-foreground/80 mb-0.5">Easy Returns</p>
+                  <p>Within 14 days</p>
+                </div>
+              </div>
+
+              {/* Tabs */}
+              <Tabs defaultValue="description">
+                <TabsList className="w-full justify-start border-b border-foreground/10 rounded-none bg-transparent h-auto p-0 gap-6">
+                  {['description', 'shipping', 'returns', 'reviews'].map((tab) => (
+                    <TabsTrigger
+                      key={tab}
+                      value={tab}
+                      className="rounded-none border-b-2 border-transparent data-[state=active]:border-foreground data-[state=active]:bg-transparent pb-3 px-0 text-sm uppercase tracking-wider capitalize"
+                    >
+                      {tab}
+                      {tab === 'reviews' && totalReviews > 0 && (
+                        <span className="ml-1.5 text-xs text-muted-foreground">({totalReviews})</span>
+                      )}
+                    </TabsTrigger>
+                  ))}
                 </TabsList>
+
                 <TabsContent value="description" className="pt-6">
-                  <p className="text-foreground/70 leading-relaxed">
-                    {product.description}
-                  </p>
+                  <p className="text-foreground/70 leading-relaxed">{product.description}</p>
                 </TabsContent>
-                <TabsContent value="shipping" className="pt-6">
-                  <p className="text-foreground/70 leading-relaxed">
-                    Free shipping on orders over ₹5,000. Standard delivery within 5-7 business days.
-                    Express shipping available for an additional fee.
-                  </p>
+
+                <TabsContent value="shipping" className="pt-6 space-y-3 text-sm text-foreground/70">
+                  <p>✦ Free shipping on orders above <strong>₹999</strong>.</p>
+                  <p>✦ Standard delivery within <strong>5–7 business days</strong> across India.</p>
+                  <p>✦ Items are carefully packed to ensure they arrive in perfect condition.</p>
+                  <p>✦ You'll receive a tracking link once your order is dispatched.</p>
                 </TabsContent>
-                <TabsContent value="returns" className="pt-6">
-                  <p className="text-foreground/70 leading-relaxed">
-                    Easy 14-day returns. Items must be unused and in original packaging.
-                    Contact our customer service for return authorization.
-                  </p>
+
+                <TabsContent value="returns" className="pt-6 space-y-3 text-sm text-foreground/70">
+                  <p>✦ <strong>14-day returns</strong> from the date of delivery.</p>
+                  <p>✦ Items must be unused, unwashed, and in original packaging.</p>
+                  <p>✦ Custom or personalised orders are non-refundable.</p>
+                  <p>✦ To initiate a return, email us at <a href="mailto:shandecor01@gmail.com" className="underline hover:text-foreground">shandecor01@gmail.com</a>.</p>
                 </TabsContent>
+
                 <TabsContent value="reviews" className="pt-6">
                   <div className="space-y-8">
-                    {/* Review Form Section */}
                     <div className="border-b border-border pb-8">
                       <h3 className="font-display text-xl mb-4">
-                        {userReview ? 'Update Your Review' : 'Write a Review'}
+                        {userReview ? 'Your Review' : 'Write a Review'}
                       </h3>
                       {userReview?.moderationStatus === 'PENDING' && (
                         <p className="text-sm text-muted-foreground mb-4 border border-border bg-secondary/40 px-4 py-3">
-                          Your review is awaiting moderation. It will appear publicly after the team approves it.
+                          Your review is awaiting moderation.
                         </p>
                       )}
                       {userReview?.moderationStatus === 'REJECTED' && (
                         <p className="text-sm text-destructive mb-4 border border-destructive/30 bg-destructive/5 px-4 py-3">
-                          This review was not published. You can update it and it will be submitted again for review.
+                          This review was not published. You can update and resubmit.
                         </p>
                       )}
                       {showReviewForm || userReview ? (
@@ -368,18 +553,22 @@ export default function ProductDetailPage() {
                       ) : (
                         <div className="text-center py-6 bg-secondary/20 rounded-sm">
                           <p className="text-foreground/70 mb-4">Share your experience with this product</p>
-                          <Button onClick={() => setShowReviewForm(true)}>
-                            Write a Review
-                          </Button>
+                          {isAuthenticated ? (
+                            <Button onClick={() => setShowReviewForm(true)}>Write a Review</Button>
+                          ) : (
+                            <Link to="/auth/login">
+                              <Button variant="outline">Sign in to Review</Button>
+                            </Link>
+                          )}
                         </div>
                       )}
                     </div>
 
-                    {/* Reviews List */}
                     <ReviewsList
                       key={reviewKey}
                       productId={product.id}
-                      onReviewUpdate={handleReviewUpdate}
+                      onReviewUpdate={() => setReviewKey((k) => k + 1)}
+                      onStatsLoad={({ total, avg }) => { setTotalReviews(total); setAvgRating(avg); }}
                     />
                   </div>
                 </TabsContent>
@@ -395,8 +584,8 @@ export default function ProductDetailPage() {
           <div className="container mx-auto max-w-screen-2xl">
             <h2 className="font-display text-3xl md:text-4xl text-center mb-12">You May Also Like</h2>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-6 md:gap-8">
-              {relatedProducts.map((product, index) => (
-                <ProductCard key={product.id} product={product} index={index} />
+              {relatedProducts.map((p, index) => (
+                <ProductCard key={p.id} product={p} index={index} />
               ))}
             </div>
           </div>

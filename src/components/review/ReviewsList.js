@@ -6,7 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import ReviewCard from './ReviewCard';
 import { getProductReviews } from '../../lib/api';
 
-export default function ReviewsList({ productId, onReviewUpdate }) {
+export default function ReviewsList({ productId, onReviewUpdate, onStatsLoad }) {
   const [reviews, setReviews] = useState([]);
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -39,6 +39,9 @@ export default function ReviewsList({ productId, onReviewUpdate }) {
       
       setStats(response.data.stats);
       setHasMore(pageNum < response.data.pagination.pages);
+      if (pageNum === 1 && response.data.stats) {
+        onStatsLoad?.({ total: response.data.stats.totalReviews, avg: response.data.stats.averageRating });
+      }
       
     } catch (err) {
       setError('Failed to load reviews');
