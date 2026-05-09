@@ -119,6 +119,8 @@ export const updateOrderStatus = (orderId, status) => api.put(`/admin/orders/${o
 export const createCategory = (data) => api.post('/admin/categories', data);
 export const deleteCategory = (categoryId) => api.delete(`/admin/categories/${categoryId}`);
 export const getAdminUsers = () => api.get('/admin/users');
+export const updateAdminUser = (userId, data) => api.put(`/admin/users/${userId}`, data);
+export const deleteAdminUser = (userId) => api.delete(`/admin/users/${userId}`);
 export const getAdminReviews = (params) => api.get('/admin/reviews', { params });
 export const moderateAdminReview = (reviewId, moderationStatus) =>
   api.put(`/admin/reviews/${reviewId}/moderate`, { moderationStatus });
