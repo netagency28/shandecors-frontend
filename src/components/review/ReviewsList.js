@@ -49,7 +49,7 @@ export default function ReviewsList({ productId, onReviewUpdate, onStatsLoad }) 
     } finally {
       setLoading(false);
     }
-  }, [productId, filters.rating]);
+  }, [productId, filters.rating, onStatsLoad]);
 
   useEffect(() => {
     fetchReviews(1, true);
