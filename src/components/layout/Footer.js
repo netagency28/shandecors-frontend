@@ -9,8 +9,12 @@ export default function Footer() {
 
           {/* Brand */}
           <div>
-            <Link to="/" className="font-display text-2xl tracking-[0.15em] uppercase text-white">
-              Shan Decors
+            <Link to="/" className="inline-block">
+              <img
+                src="https://qkrcnxrabkmqrnlplagf.supabase.co/storage/v1/object/public/uploads/logos/shandecors_column_logo.png"
+                alt="Shan Decors"
+                className="h-16 w-auto object-contain brightness-0 invert"
+              />
             </Link>
             <p className="mt-6 text-sm leading-relaxed text-white/60">
               Handcrafted with intention — celebrating India's timeless craftsmanship and bringing it into modern homes. Every piece is made by hand, shaped with care, and built to last.

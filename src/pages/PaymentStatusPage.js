@@ -5,6 +5,7 @@ import { CheckCircle, XCircle, Package, ArrowRight, Loader2, Clock3 } from 'luci
 import { Button } from '../components/ui/button';
 import { verifyPayment } from '../lib/api';
 import { useCart } from '../contexts/CartContext';
+import * as Sentry from '@sentry/react';
 
 export default function PaymentStatusPage() {
   const [searchParams] = useSearchParams();
@@ -21,6 +22,13 @@ export default function PaymentStatusPage() {
   const [error, setError] = useState('');
 
   useEffect(() => {
+    Sentry.addBreadcrumb({
+      category: 'payment',
+      message: 'Payment confirmation page loaded',
+      level: 'info',
+      data: { orderId, gateway },
+    });
+
     const verify = async () => {
       if (!orderId) {
         setStatus('failed');
@@ -36,15 +44,17 @@ export default function PaymentStatusPage() {
           payment_status: paymentStatusParam,
         });
         const data = response.data;
-        
+
         if (data.payment_status === 'paid') {
           if (!cartClearedRef.current) {
             clearCart();
             cartClearedRef.current = true;
           }
+          Sentry.addBreadcrumb({ category: 'payment', message: 'Payment verified successfully', level: 'info', data: { orderId } });
           setStatus('success');
           setOrderDetails(data);
         } else if (data.payment_status === 'failed') {
+          Sentry.addBreadcrumb({ category: 'payment', message: 'Payment verification returned failed', level: 'warning', data: { orderId } });
           setStatus('failed');
           setError('Payment was declined');
         } else {
@@ -55,6 +65,7 @@ export default function PaymentStatusPage() {
         }
       } catch (err) {
         console.error('Verification error:', err);
+        Sentry.captureException(err, { extra: { step: 'payment_verification', orderId, gateway } });
         setStatus('failed');
         setError('Failed to verify payment');
       }
@@ -216,17 +227,17 @@ export default function PaymentStatusPage() {
               </p>
 
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                <Link to="/checkout">
-                  <Button 
+                <Link to="/cart">
+                  <Button
                     className="rounded-none bg-foreground text-background hover:bg-foreground/90 px-8 py-5"
                     data-testid="retry-btn"
                   >
-                    Try Again
+                    Go to Cart
                   </Button>
                 </Link>
                 <Link to="/products">
-                  <Button 
-                    variant="outline" 
+                  <Button
+                    variant="outline"
                     className="rounded-none px-8 py-5"
                   >
                     Back to Shop

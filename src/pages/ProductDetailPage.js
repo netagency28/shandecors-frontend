@@ -82,7 +82,7 @@ function MediaGallery({ images = [], productName }) {
                 src={safeImgUrl(currentUrl, { width: 1200, quality: 78 })}
                 alt={productName}
                 className="w-full h-full object-contain p-8"
-                fetchPriority="high"
+                fetchpriority="high"
                 decoding="async"
                 data-testid="product-image"
               />
@@ -179,7 +179,7 @@ function MediaGallery({ images = [], productName }) {
 
       {/* ── Lightbox ── */}
       <Dialog open={lightbox} onOpenChange={setLightbox}>
-        <DialogContent className="max-w-4xl p-0 bg-black border-0 overflow-hidden">
+        <DialogContent className="max-w-4xl p-0 bg-black border-0 overflow-hidden" aria-describedby={undefined}>
           <button
             onClick={() => setLightbox(false)}
             className="absolute top-3 right-3 z-10 w-9 h-9 bg-white/10 hover:bg-white/20 flex items-center justify-center text-white rounded-full"
@@ -411,9 +411,11 @@ export default function ProductDetailPage() {
                 </div>
               )}
 
-              <p className="text-foreground/70 leading-relaxed mb-6" data-testid="product-description">
-                {product.description}
-              </p>
+              <div
+                className="text-foreground/70 leading-relaxed mb-6 prose prose-sm max-w-none [&_ul]:list-disc [&_ol]:list-decimal [&_ul]:pl-5 [&_ol]:pl-5 [&_ul]:space-y-1 [&_ol]:space-y-1"
+                dangerouslySetInnerHTML={{ __html: product.description }}
+                data-testid="product-description"
+              />
 
               {/* Stock */}
               <div className="mb-6">
@@ -510,7 +512,10 @@ export default function ProductDetailPage() {
                 </TabsList>
 
                 <TabsContent value="description" className="pt-6">
-                  <p className="text-foreground/70 leading-relaxed">{product.description}</p>
+                  <div
+                    className="text-foreground/70 leading-relaxed prose prose-sm max-w-none [&_ul]:list-disc [&_ol]:list-decimal [&_ul]:pl-5 [&_ol]:pl-5 [&_ul]:space-y-1 [&_ol]:space-y-1"
+                    dangerouslySetInnerHTML={{ __html: product.description }}
+                  />
                 </TabsContent>
 
                 <TabsContent value="shipping" className="pt-6 space-y-3 text-sm text-foreground/70">

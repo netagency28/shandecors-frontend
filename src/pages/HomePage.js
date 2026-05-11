@@ -131,7 +131,7 @@ export default function HomePage() {
               initial={{ opacity: 0, scale: 1.03 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ duration: 0.8 }}
-              fetchPriority="high"
+              fetchpriority="high"
               decoding="async"
             />
             <div className="absolute inset-0 bg-gradient-to-r from-black/75 via-black/45 to-black/20" />
@@ -343,9 +343,8 @@ export default function HomePage() {
       )}
 
       {/* New Design Products with Category Tabs */}
-      <section className="py-16 md:py-24 px-4 md:px-8 lg:px-16 bg-white" data-testid="new-design-section">
+      {/* <section className="py-16 md:py-24 px-4 md:px-8 lg:px-16 bg-white" data-testid="new-design-section">
         <div className="max-w-screen-2xl mx-auto">
-          {/* Category Tabs */}
           <div className="flex flex-wrap justify-center gap-6 md:gap-10 mb-12 md:mb-16">
             <Link 
               to="/products"
@@ -370,10 +369,10 @@ export default function HomePage() {
             ))}
           </div>
         </div>
-      </section>
+      </section> */}
 
       {/* Promotional Banner */}
-      <section className="py-16 md:py-24 px-4 md:px-8 lg:px-16 bg-[#F5F5F5]" data-testid="promo-section">
+      {/* <section className="py-16 md:py-24 px-4 md:px-8 lg:px-16 bg-[#F5F5F5]" data-testid="promo-section">
         <div className="max-w-screen-2xl mx-auto">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
             <div>
@@ -410,10 +409,10 @@ export default function HomePage() {
             </div>
           </div>
         </div>
-      </section>
+      </section> */}
 
       {/* Newsletter / Testimonial */}
-      <section className="py-20 md:py-32 px-4 md:px-8 lg:px-16 bg-white" data-testid="testimonial-section">
+      {/* <section className="py-20 md:py-32 px-4 md:px-8 lg:px-16 bg-white" data-testid="testimonial-section">
         <div className="max-w-4xl mx-auto text-center">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -432,7 +431,7 @@ export default function HomePage() {
             </p>
           </motion.div>
         </div>
-      </section>
+      </section> */}
 
       {/* Why Choose Us */}
       <section className="py-16 md:py-20 px-4 md:px-8 lg:px-16 bg-[#F5F5F5]" data-testid="why-choose-us-section">
@@ -473,7 +472,7 @@ export default function HomePage() {
               {
                 icon: Shield,
                 title: "Secure Payments",
-                description: "100% secure payment processing with UPI, cards, net banking, and COD options.",
+                description: "100% secure payment processing with UPI, cards, net banking.",
                 delay: 0.3
               }
             ].map((feature, index) => (

@@ -34,6 +34,7 @@ import {
 } from '../../components/ui/dialog';
 import { createCategory, deleteCategory, getAdminProducts, getCategories, deleteProduct, bulkDeleteProducts } from '../../lib/api';
 import AdminLayout from '../../components/admin/AdminLayout';
+import { toast } from '../../components/ui/sonner';
 
 const slugify = (value) =>
   value
@@ -159,7 +160,10 @@ function AdminProductsContent() {
     try {
       await deleteCategory(categoryId);
       await fetchAll();
+      toast.success('Category deleted successfully');
     } catch (error) {
+      const message = error?.response?.data?.message || 'Failed to delete category';
+      toast.error(message);
       console.error('Delete category failed:', error);
     }
   };
@@ -352,7 +356,7 @@ function AdminProductsContent() {
       </AlertDialog>
 
       <Dialog open={showCategoryDialog} onOpenChange={setShowCategoryDialog}>
-        <DialogContent>
+        <DialogContent aria-describedby={undefined}>
           <DialogHeader>
             <DialogTitle>Manage Categories</DialogTitle>
           </DialogHeader>

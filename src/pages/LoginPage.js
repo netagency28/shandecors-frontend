@@ -82,8 +82,12 @@ export default function LoginPage() {
         />
         <div className="absolute inset-0 bg-foreground/30" />
         <div className="absolute bottom-12 left-12 right-12">
-          <Link to="/" className="font-display text-4xl text-white">
-            Shan Decor
+          <Link to="/" className="inline-block">
+            <img
+              src="https://qkrcnxrabkmqrnlplagf.supabase.co/storage/v1/object/public/uploads/logos/shandecors_column_logo.png"
+              alt="Shan Decors"
+              className="h-16 w-auto object-contain brightness-0 invert"
+            />
           </Link>
           <p className="mt-4 text-white/80 max-w-md">
             Discover thoughtfully curated home decor pieces that transform your space into a sanctuary.

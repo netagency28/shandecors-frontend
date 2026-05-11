@@ -10,6 +10,7 @@ import { Separator } from '../components/ui/separator';
 import { useCart } from '../contexts/CartContext';
 import { useAuth } from '../contexts/AuthContext';
 import { createOrder, createGuestOrder, createPaymentOrder, getAddresses } from '../lib/api';
+import * as Sentry from '@sentry/react';
 
 const loadCashfreeSdk = () => new Promise((resolve, reject) => {
   if (window.Cashfree) {
@@ -89,6 +90,8 @@ export default function CheckoutPage() {
     setLoading(true);
     setError('');
 
+    Sentry.addBreadcrumb({ category: 'payment', message: 'Checkout form submitted', level: 'info' });
+
     try {
       // Prepare order data
       const orderItems = items.map(item => ({
@@ -119,9 +122,11 @@ export default function CheckoutPage() {
       };
 
       // Create order
+      Sentry.addBreadcrumb({ category: 'payment', message: 'Creating order', level: 'info' });
       const createOrderFn = isAuthenticated ? createOrder : createGuestOrder;
       const orderResponse = await createOrderFn(orderData);
       const order = orderResponse.data;
+      Sentry.addBreadcrumb({ category: 'payment', message: 'Order created', level: 'info', data: { orderId: order.id } });
 
       const paymentResponse = await createPaymentOrder({
         order_id: order.id,
@@ -135,6 +140,7 @@ export default function CheckoutPage() {
       const environment = String(paymentResponse.data?.environment || 'sandbox').toLowerCase();
       const mode = environment === 'production' ? 'production' : 'sandbox';
       const redirectUrl = paymentResponse.data?.redirect_url;
+      Sentry.addBreadcrumb({ category: 'payment', message: 'Payment intent created', level: 'info', data: { gateway, mode } });
 
       if (gateway === 'instamojo') {
         if (!redirectUrl) {
@@ -158,6 +164,7 @@ export default function CheckoutPage() {
       });
     } catch (err) {
       console.error('Checkout error:', err);
+      Sentry.captureException(err, { extra: { step: 'checkout' } });
       const requiredEnv = err.response?.data?.required_env;
       if (Array.isArray(requiredEnv) && requiredEnv.length > 0) {
         setError(`Payment is not configured. Missing: ${requiredEnv.join(', ')}`);

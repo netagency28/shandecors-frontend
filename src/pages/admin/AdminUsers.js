@@ -206,7 +206,7 @@ function AdminUsersContent() {
 
       {/* Edit Dialog */}
       <Dialog open={!!editTarget} onOpenChange={(open) => { if (!open) closeEdit(); }}>
-        <DialogContent className="sm:max-w-md rounded-none">
+        <DialogContent className="sm:max-w-md rounded-none" aria-describedby={undefined}>
           <DialogHeader>
             <DialogTitle>Edit User</DialogTitle>
           </DialogHeader>

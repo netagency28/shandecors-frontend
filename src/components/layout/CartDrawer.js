@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useCart } from '../../contexts/CartContext';
 import { Button } from '../ui/button';
 import { Minus, Plus, Trash2, ShoppingBag } from 'lucide-react';
@@ -6,8 +6,9 @@ import { SheetHeader, SheetTitle, SheetFooter } from '../ui/sheet';
 import { ScrollArea } from '../ui/scroll-area';
 import { Separator } from '../ui/separator';
 
-export default function CartDrawer() {
+export default function CartDrawer({ onClose }) {
   const { items, updateQuantity, removeItem, cartTotal, cartCount } = useCart();
+  const navigate = useNavigate();
 
   if (items.length === 0) {
     return (
@@ -103,14 +104,16 @@ export default function CartDrawer() {
           <p className="text-xs text-muted-foreground">
             Shipping calculated at checkout
           </p>
-          <Link to="/checkout" className="block">
-            <Button 
-              className="w-full rounded-none bg-foreground text-background hover:bg-foreground/90 px-8 py-6 uppercase tracking-widest text-xs font-bold"
-              data-testid="checkout-btn"
-            >
-              Proceed to Checkout
-            </Button>
-          </Link>
+          <Button 
+            className="w-full rounded-none bg-foreground text-background hover:bg-foreground/90 px-8 py-6 uppercase tracking-widest text-xs font-bold"
+            data-testid="checkout-btn"
+            onClick={() => {
+              onClose?.();
+              navigate('/checkout');
+            }}
+          >
+            Proceed to Checkout
+          </Button>
         </div>
       </SheetFooter>
     </div>

@@ -13,6 +13,7 @@ export default function Navbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [isCartOpen, setIsCartOpen] = useState(false);
   const { cartCount } = useCart();
   const { wishlistCount } = useWishlist();
   const { isAuthenticated, profile, user } = useAuth();
@@ -25,8 +26,6 @@ export default function Navbar() {
     { href: '/about', label: 'About' },
     { href: '/products', label: 'Shop' },
     { href: '/products?category=lamps', label: 'Lamps' },
-    { href: '/products?category=vases', label: 'Vases' },
-    { href: '/products?category=accessories', label: 'Accessories' },
   ];
 
   const handleSearch = (e) => {
@@ -83,12 +82,16 @@ export default function Navbar() {
           </div>
 
           {/* Logo */}
-          <Link 
-            to="/" 
-            className="font-display text-2xl md:text-3xl tracking-[0.15em] uppercase"
+          <Link
+            to="/"
+            className="flex items-center"
             data-testid="logo-link"
           >
-            Shan Decors
+            <img
+              src="https://qkrcnxrabkmqrnlplagf.supabase.co/storage/v1/object/public/uploads/logos/shandecors_column_logo.png"
+              alt="Shan Decors"
+              className="h-16 md:h-15 w-auto object-contain"
+            />
           </Link>
 
           {/* Desktop Navigation */}
@@ -172,7 +175,7 @@ export default function Navbar() {
               </Link>
             )}
 
-            <Sheet>
+            <Sheet open={isCartOpen} onOpenChange={setIsCartOpen}>
               <SheetTrigger asChild>
                 <Button variant="ghost" size="icon" className="relative hover:bg-transparent" data-testid="cart-btn">
                   <ShoppingBag size={20} className="text-foreground/70" />
@@ -184,7 +187,7 @@ export default function Navbar() {
                 </Button>
               </SheetTrigger>
               <SheetContent side="right" className="w-full sm:max-w-md p-0">
-                <CartDrawer />
+                <CartDrawer onClose={() => setIsCartOpen(false)} />
               </SheetContent>
             </Sheet>
           </div>

@@ -5,13 +5,14 @@ import { Save, X, Upload, Loader2, Film, Image, Link as LinkIcon, ChevronLeft, C
 import { Button } from '../../components/ui/button';
 import { Input } from '../../components/ui/input';
 import { Label } from '../../components/ui/label';
-import { Textarea } from '../../components/ui/textarea';
 import { Switch } from '../../components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../components/ui/select';
 import { Dialog, DialogContent } from '../../components/ui/dialog';
 import { getProductById, createProduct, updateProduct, getCategories, uploadSingle } from '../../lib/api';
 import AdminRoute from '../../components/admin/AdminRoute';
 import AdminLayout from '../../components/admin/AdminLayout';
+import ReactQuill from 'react-quill';
+import 'react-quill/dist/quill.snow.css';
 
 const isVideoUrl = (url) => /\.(mp4|webm|mov|avi|ogg)(\?.*)?$/i.test(url);
 
@@ -234,7 +235,7 @@ function MediaUploader({ urls, onChange, disabled }) {
 
       {/* Lightbox preview */}
       <Dialog open={previewIndex !== null} onOpenChange={(open) => { if (!open) setPreviewIndex(null); }}>
-        <DialogContent className="max-w-3xl p-2 bg-black border-0">
+        <DialogContent className="max-w-3xl p-2 bg-black border-0" aria-describedby={undefined}>
           {previewIndex !== null && (
             isVideoUrl(urls[previewIndex]) ? (
               <video
@@ -356,6 +357,27 @@ function AdminProductFormContent() {
     }
   };
 
+  const handleDescriptionChange = (value) => {
+    setFormData((prev) => ({ ...prev, description: value }));
+  };
+
+  const quillModules = {
+    toolbar: [
+      [{ 'header': [1, 2, false] }],
+      ['bold', 'italic', 'underline', 'strike'],
+      [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+      [{ 'align': [] }],
+      ['clean']
+    ]
+  };
+
+  const quillFormats = [
+    'header',
+    'bold', 'italic', 'underline', 'strike',
+    'list', 'bullet',
+    'align'
+  ];
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
@@ -440,7 +462,16 @@ function AdminProductFormContent() {
               </div>
               <div>
                 <Label htmlFor="description">Description *</Label>
-                <Textarea id="description" name="description" value={formData.description} onChange={handleChange} required rows={4} className="mt-1 rounded-none" data-testid="product-description-input" />
+                <div className="mt-1">
+                  <ReactQuill
+                    value={formData.description}
+                    onChange={handleDescriptionChange}
+                    modules={quillModules}
+                    formats={quillFormats}
+                    className="bg-background rounded-none [&_.ql-toolbar]:border-border [&_.ql-container]:border-border [&_.ql-editor]:min-h-[150px] [&_.ql-editor]:font-sans"
+                    data-testid="product-description-input"
+                  />
+                </div>
               </div>
               <div>
                 <Label htmlFor="category_id">Category *</Label>

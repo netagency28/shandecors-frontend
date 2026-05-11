@@ -37,7 +37,13 @@ export default function AdminLayout({ title, subtitle, actions, children }) {
         <aside className="border-r border-border bg-background">
           <div className="p-5 border-b border-border flex items-center justify-between">
             <div>
-              <Link to="/" className="font-display text-xl">Shan Decor</Link>
+              <Link to="/" className="inline-block">
+                <img
+                  src="https://qkrcnxrabkmqrnlplagf.supabase.co/storage/v1/object/public/uploads/logos/shandecors_column_logo.png"
+                  alt="Shan Decors"
+                  className="h-16 w-auto object-contain"
+                />
+              </Link>
               <p className="text-xs mt-1 uppercase tracking-[0.2em] text-accent">Admin</p>
             </div>
             <Link to="/admin/products/new">
