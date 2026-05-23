@@ -7,6 +7,7 @@ import ErrorBoundary from './components/ErrorBoundary';
 import { Toaster } from './components/ui/sonner';
 import Navbar from './components/layout/Navbar';
 import Footer from './components/layout/Footer';
+import ScrollToTop from './components/ScrollToTop';
 import HomePage from './pages/HomePage';
 import ProductsPage from './pages/ProductsPage';
 import ProductDetailPage from './pages/ProductDetailPage';
@@ -16,6 +17,7 @@ import LoginPage from './pages/LoginPage';
 import CheckoutPage from './pages/CheckoutPage';
 import PaymentStatusPage from './pages/PaymentStatusPage';
 import OrdersPage from './pages/OrdersPage';
+import OrderDetailPage from './pages/OrderDetailPage';
 import ProfilePage from './pages/ProfilePage';
 import ContactPage from './pages/ContactPage';
 import TermsPage from './pages/TermsPage';
@@ -49,6 +51,7 @@ function CustomerLayout({ children }) {
 function App() {
   return (
     <BrowserRouter>
+      <ScrollToTop />
       <ErrorBoundary>
       <AuthProvider>
         <CartProvider>
@@ -69,6 +72,7 @@ function App() {
             <Route path="/payment/success" element={<CustomerLayout><PaymentStatusPage /></CustomerLayout>} />
             <Route path="/payment/failed" element={<CustomerLayout><PaymentStatusPage /></CustomerLayout>} />
             <Route path="/orders" element={<CustomerLayout><OrdersPage /></CustomerLayout>} />
+            <Route path="/orders/:orderId" element={<CustomerLayout><OrderDetailPage /></CustomerLayout>} />
             <Route path="/profile" element={<CustomerLayout><ProfilePage /></CustomerLayout>} />
             <Route path="/contact" element={<CustomerLayout><ContactPage /></CustomerLayout>} />
             <Route path="/terms-and-conditions" element={<CustomerLayout><TermsPage /></CustomerLayout>} />

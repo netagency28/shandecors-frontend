@@ -87,7 +87,9 @@ export default function ProfilePage() {
     setSaving(true);
     setProfileMsg('');
     setProfileErr('');
-    const result = await updateProfile({ name, phone });
+    const payload = { name: name.trim() };
+    if (phone.trim()) payload.phone = phone.trim();
+    const result = await updateProfile(payload);
     if (result?.error) {
       setProfileErr(result.error);
     } else {

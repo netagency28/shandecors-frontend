@@ -154,7 +154,7 @@ export default function AboutPage() {
               className="relative h-[480px] bg-[#F5F5F5] overflow-hidden order-2 lg:order-1"
             >
               <img
-                src="https://images.unsplash.com/photo-1513506003901-1e6a35949f48?w=800&h=600&fit=crop"
+                src="/hero/3.jpg"
                 alt="Handcrafted lamp shade casting warm light"
                 className="w-full h-full object-cover"
                 loading="lazy"

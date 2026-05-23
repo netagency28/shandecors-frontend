@@ -250,6 +250,19 @@ export default function ProductsPage() {
                 </div>
               ))}
             </div>
+          ) : products.length === 0 && category && !search ? (
+            <div className="text-center py-24" data-testid="coming-soon">
+              <p className="text-xs tracking-[0.25em] uppercase text-foreground/40 mb-4">Coming Soon</p>
+              <h3 className="font-display text-4xl md:text-5xl italic mb-4">
+                {currentCategory?.name || category.charAt(0).toUpperCase() + category.slice(1)}
+              </h3>
+              <p className="text-foreground/50 max-w-sm mx-auto mb-8">
+                We're carefully curating this collection. Check back soon — something beautiful is on its way.
+              </p>
+              <Button variant="outline" onClick={clearFilters} className="tracking-widest text-xs uppercase">
+                Browse All Products
+              </Button>
+            </div>
           ) : products.length === 0 ? (
             <div className="text-center py-20" data-testid="no-products">
               <h3 className="font-display text-2xl mb-4">No products found</h3>

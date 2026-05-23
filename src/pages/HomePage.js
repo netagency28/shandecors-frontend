@@ -62,8 +62,40 @@ const faqs = [
   },
 ];
 
+const heroSlides = [
+  {
+    image: '/hero/1.jpg',
+    tag: 'Table Lamps',
+    title: 'Bloom in Every Room',
+    subtitle: 'Handpainted botanicals that bring nature\'s art into your home',
+  },
+  {
+    image: '/hero/2.jpg',
+    tag: 'New Collection',
+    title: 'A World of Patterns',
+    subtitle: 'Explore our range of handcrafted lamp shades — each one a story',
+  },
+  {
+    image: '/hero/3.jpg',
+    tag: 'Table Lamps',
+    title: 'Warm. Simple. Yours.',
+    subtitle: 'Natural linen and solid wood, crafted to light your everyday moments',
+  },
+  {
+    image: '/hero/4.jpg',
+    tag: 'Floor Lamps',
+    title: 'Heritage, Illuminated',
+    subtitle: 'Traditional Indian motifs woven into elegant floor lighting',
+  },
+  {
+    image: '/hero/5.jpg',
+    tag: 'Pendant Lamps',
+    title: 'Light That Floats',
+    subtitle: 'Organic forms, handspun materials — pendant lamps that become the room',
+  },
+];
+
 export default function HomePage() {
-  const [featuredProducts, setFeaturedProducts] = useState([]);
   const [allProducts, setAllProducts] = useState([]);
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -72,12 +104,10 @@ export default function HomePage() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [productsRes, allProdsRes, categoriesRes] = await Promise.all([
-          getProducts({ featured: true, limit: 4 }),
+        const [allProdsRes, categoriesRes] = await Promise.all([
           getProducts({ limit: 8 }),
           getCategories()
         ]);
-        setFeaturedProducts(productsRes.data.products || []);
         setAllProducts(allProdsRes.data.products || []);
         setCategories(categoriesRes.data || []);
       } catch (error) {
@@ -91,125 +121,107 @@ export default function HomePage() {
 
   // Auto-slide for hero
   useEffect(() => {
-    if (featuredProducts.length === 0) return;
     const timer = setInterval(() => {
-      setCurrentSlide((prev) => (prev + 1) % featuredProducts.length);
+      setCurrentSlide((prev) => (prev + 1) % heroSlides.length);
     }, 5000);
     return () => clearInterval(timer);
-  }, [featuredProducts.length]);
+  }, []);
 
+  // Preload next slide image
   useEffect(() => {
-    if (!featuredProducts.length) return;
-    const nextIndex = (currentSlide + 1) % featuredProducts.length;
-    const nextImageUrl = optimizeImageUrl(featuredProducts[nextIndex]?.images?.[0], { width: 1800, quality: 72 });
-    if (!nextImageUrl) return;
+    const nextIndex = (currentSlide + 1) % heroSlides.length;
     const img = new Image();
-    img.src = nextImageUrl;
-  }, [currentSlide, featuredProducts]);
-
-  const heroProduct = featuredProducts[currentSlide] || null;
+    img.src = heroSlides[nextIndex].image;
+  }, [currentSlide]);
 
   const nextSlide = () => {
-    setCurrentSlide((prev) => (prev + 1) % featuredProducts.length);
+    setCurrentSlide((prev) => (prev + 1) % heroSlides.length);
   };
 
   const prevSlide = () => {
-    setCurrentSlide((prev) => (prev - 1 + featuredProducts.length) % featuredProducts.length);
+    setCurrentSlide((prev) => (prev - 1 + heroSlides.length) % heroSlides.length);
   };
 
   return (
     <div className="bg-white" data-testid="home-page">
       {/* Hero Section - Full Width Image Slider */}
       <section className="relative h-[92vh] min-h-[620px] overflow-hidden" data-testid="hero-section">
-        {heroProduct ? (
-          <>
-            <motion.img
-              key={`hero-bg-${currentSlide}`}
-              src={optimizeImageUrl(heroProduct.images?.[0], { width: 2000, quality: 74 })}
-              alt={heroProduct.name}
-              className="absolute inset-0 w-full h-full object-cover"
-              initial={{ opacity: 0, scale: 1.03 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.8 }}
-              fetchpriority="high"
-              decoding="async"
-            />
-            <div className="absolute inset-0 bg-gradient-to-r from-black/75 via-black/45 to-black/20" />
+        <motion.img
+          key={`hero-bg-${currentSlide}`}
+          src={heroSlides[currentSlide].image}
+          alt={heroSlides[currentSlide].title}
+          className="absolute inset-0 w-full h-full object-cover"
+          initial={{ opacity: 0, scale: 1.03 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.8 }}
+          fetchpriority="high"
+          decoding="async"
+        />
+        <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/40 to-black/10" />
 
-            <div className="absolute inset-0 flex items-center">
-              <div className="w-full max-w-screen-2xl mx-auto px-6 md:px-12 lg:px-16 relative z-10">
-                <motion.div
-                  key={currentSlide}
-                  initial={{ opacity: 0, x: -30 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ duration: 0.6 }}
-                  className="max-w-2xl"
-                >
-                  <div className="flex items-center gap-3 mb-4">
-                    <div className="w-0.5 h-10 bg-white/80"></div>
-                    <div>
-                      <p className="text-xs uppercase tracking-[0.2em] font-semibold text-white/80">
-                        {categories.find(c => c.id === heroProduct.category_id)?.name || 'Lighting'}
-                      </p>
-                      <p className="text-xs tracking-[0.15em] text-white/70">2026</p>
-                    </div>
-                  </div>
-                  
-                  <h1 className="font-display text-4xl md:text-6xl lg:text-7xl tracking-[0.08em] uppercase mb-6 text-white leading-tight">
-                    {heroProduct.name}
-                  </h1>
-                  
-                  <div className="flex items-baseline gap-2 mb-8">
-                    <span className="text-xs uppercase tracking-wider text-white/70">From</span>
-                    <span className="font-display text-3xl md:text-4xl text-white">
-                      ₹{(heroProduct.sale_price || heroProduct.price).toLocaleString()}
-                    </span>
-                  </div>
-                  
-                  <Link to={`/products/${heroProduct.slug}`}>
-                    <Button 
-                      className="rounded-none bg-white text-black hover:bg-white/90 px-10 py-6 text-sm tracking-[0.15em] uppercase font-medium transition-all duration-300"
-                      data-testid="shop-now-btn"
-                    >
-                      Shop Now
-                    </Button>
-                  </Link>
-                </motion.div>
+        <div className="absolute inset-0 flex items-center">
+          <div className="w-full max-w-screen-2xl mx-auto px-6 md:px-12 lg:px-16 relative z-10">
+            <motion.div
+              key={currentSlide}
+              initial={{ opacity: 0, x: -30 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.6 }}
+              className="max-w-2xl"
+            >
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-0.5 h-10 bg-white/80"></div>
+                <div>
+                  <p className="text-xs uppercase tracking-[0.2em] font-semibold text-white/80">
+                    {heroSlides[currentSlide].tag}
+                  </p>
+                  <p className="text-xs tracking-[0.15em] text-white/70">2026</p>
+                </div>
               </div>
-            </div>
-            
-            {/* Slider Controls */}
-            <div className="absolute bottom-8 left-6 md:left-12 lg:left-16 flex items-center gap-4 z-20">
-              <button 
-                onClick={prevSlide}
-                className="w-12 h-12 border border-white/45 text-white flex items-center justify-center hover:bg-white hover:text-black transition-all duration-300"
-                data-testid="prev-slide-btn"
-              >
-                <ChevronLeft size={20} />
-              </button>
-              <button 
-                onClick={nextSlide}
-                className="w-12 h-12 border border-white/45 text-white flex items-center justify-center hover:bg-white hover:text-black transition-all duration-300"
-                data-testid="next-slide-btn"
-              >
-                <ChevronRight size={20} />
-              </button>
-              <span className="ml-4 text-sm tracking-wider text-white">
-                {String(currentSlide + 1).padStart(2, '0')} / {String(featuredProducts.length).padStart(2, '0')}
-              </span>
-            </div>
-          </>
-        ) : (
-          <div className="h-full flex items-center justify-center">
-            <div className="animate-pulse">
-              <div className="w-48 h-8 bg-secondary rounded"></div>
-            </div>
+
+              <h1 className="font-display text-4xl md:text-6xl lg:text-7xl tracking-[0.06em] uppercase mb-5 text-white leading-tight">
+                {heroSlides[currentSlide].title}
+              </h1>
+
+              <p className="text-sm md:text-base text-white/75 mb-8 max-w-md leading-relaxed tracking-wide">
+                {heroSlides[currentSlide].subtitle}
+              </p>
+
+              <Link to="/products">
+                <Button
+                  className="rounded-none bg-white text-black hover:bg-white/90 px-10 py-6 text-sm tracking-[0.15em] uppercase font-medium transition-all duration-300"
+                  data-testid="shop-now-btn"
+                >
+                  Shop Now
+                </Button>
+              </Link>
+            </motion.div>
           </div>
-        )}
+        </div>
+
+        {/* Slider Controls */}
+        <div className="absolute bottom-8 left-6 md:left-12 lg:left-16 flex items-center gap-4 z-20">
+          <button
+            onClick={prevSlide}
+            className="w-12 h-12 border border-white/45 text-white flex items-center justify-center hover:bg-white hover:text-black transition-all duration-300"
+            data-testid="prev-slide-btn"
+          >
+            <ChevronLeft size={20} />
+          </button>
+          <button
+            onClick={nextSlide}
+            className="w-12 h-12 border border-white/45 text-white flex items-center justify-center hover:bg-white hover:text-black transition-all duration-300"
+            data-testid="next-slide-btn"
+          >
+            <ChevronRight size={20} />
+          </button>
+          <span className="ml-4 text-sm tracking-wider text-white">
+            {String(currentSlide + 1).padStart(2, '0')} / {String(heroSlides.length).padStart(2, '0')}
+          </span>
+        </div>
       </section>
 
       {/* Categories Section - Two Column */}
-      <section className="py-16 md:py-20 px-4 md:px-8 lg:px-16" data-testid="categories-section">
+      {/* <section className="py-16 md:py-20 px-4 md:px-8 lg:px-16" data-testid="categories-section">
         <div className="max-w-screen-2xl mx-auto">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8">
             {categories.slice(0, 2).map((category, index) => (
@@ -248,7 +260,7 @@ export default function HomePage() {
             ))}
           </div>
         </div>
-      </section>
+      </section> */}
 
       {/* Trending This Week */}
       <section className="py-16 md:py-24 px-4 md:px-8 lg:px-16" data-testid="trending-section">

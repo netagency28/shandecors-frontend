@@ -411,11 +411,11 @@ export default function ProductDetailPage() {
                 </div>
               )}
 
-              <div
+              {/* <div
                 className="text-foreground/70 leading-relaxed mb-6 prose prose-sm max-w-none [&_ul]:list-disc [&_ol]:list-decimal [&_ul]:pl-5 [&_ol]:pl-5 [&_ul]:space-y-1 [&_ol]:space-y-1"
                 dangerouslySetInnerHTML={{ __html: product.description }}
                 data-testid="product-description"
-              />
+              /> */}
 
               {/* Stock */}
               <div className="mb-6">

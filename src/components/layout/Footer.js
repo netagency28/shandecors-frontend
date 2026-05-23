@@ -34,11 +34,11 @@ export default function Footer() {
           <div>
             <h3 className="text-sm tracking-[0.15em] uppercase font-medium text-white mb-6">Shop</h3>
             <ul className="space-y-3">
-              <li><Link to="/products" className="text-sm text-white/60 hover:text-white transition-colors">All Products</Link></li>
-              <li><Link to="/products?category=lamps" className="text-sm text-white/60 hover:text-white transition-colors">Lamps</Link></li>
-              <li><Link to="/products?category=vases" className="text-sm text-white/60 hover:text-white transition-colors">Vases</Link></li>
-              <li><Link to="/products?category=accessories" className="text-sm text-white/60 hover:text-white transition-colors">Accessories</Link></li>
-              <li><Link to="/contact" className="text-sm text-white/60 hover:text-white transition-colors">Custom Orders</Link></li>
+              <li><Link to="/products" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })} className="text-sm text-white/60 hover:text-white transition-colors">All Products</Link></li>
+              <li><Link to="/products?category=lamps" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })} className="text-sm text-white/60 hover:text-white transition-colors">Lamps</Link></li>
+              <li><Link to="/products?category=vases" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })} className="text-sm text-white/60 hover:text-white transition-colors">Vases</Link></li>
+              <li><Link to="/products?category=accessories" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })} className="text-sm text-white/60 hover:text-white transition-colors">Accessories</Link></li>
+              <li><Link to="/contact" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })} className="text-sm text-white/60 hover:text-white transition-colors">Custom Orders</Link></li>
             </ul>
           </div>
 
@@ -46,12 +46,12 @@ export default function Footer() {
           <div>
             <h3 className="text-sm tracking-[0.15em] uppercase font-medium text-white mb-6">Information</h3>
             <ul className="space-y-3">
-              <li><Link to="/about" className="text-sm text-white/60 hover:text-white transition-colors">About Us</Link></li>
-              <li><Link to="/contact" className="text-sm text-white/60 hover:text-white transition-colors">Contact Us</Link></li>
-              <li><Link to="/shipping-policy" className="text-sm text-white/60 hover:text-white transition-colors">Shipping Policy</Link></li>
-              <li><Link to="/refunds-cancellation-policy" className="text-sm text-white/60 hover:text-white transition-colors">Returns & Exchanges</Link></li>
-              <li><Link to="/privacy-policy" className="text-sm text-white/60 hover:text-white transition-colors">Privacy Policy</Link></li>
-              <li><Link to="/terms-and-conditions" className="text-sm text-white/60 hover:text-white transition-colors">Terms & Conditions</Link></li>
+              <li><Link to="/about" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })} className="text-sm text-white/60 hover:text-white transition-colors">About Us</Link></li>
+              <li><Link to="/contact" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })} className="text-sm text-white/60 hover:text-white transition-colors">Contact Us</Link></li>
+              <li><Link to="/shipping-policy" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })} className="text-sm text-white/60 hover:text-white transition-colors">Shipping Policy</Link></li>
+              <li><Link to="/refunds-cancellation-policy" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })} className="text-sm text-white/60 hover:text-white transition-colors">Returns & Exchanges</Link></li>
+              <li><Link to="/privacy-policy" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })} className="text-sm text-white/60 hover:text-white transition-colors">Privacy Policy</Link></li>
+              <li><Link to="/terms-and-conditions" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })} className="text-sm text-white/60 hover:text-white transition-colors">Terms & Conditions</Link></li>
             </ul>
           </div>
 

@@ -72,9 +72,9 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex" data-testid="login-page">
+    <div className="h-screen flex overflow-hidden" data-testid="login-page">
       {/* Left Side - Image */}
-      <div className="hidden lg:block lg:w-1/2 relative">
+      <div className="hidden lg:block lg:w-1/2 relative h-screen">
         <img
           src="https://images.unsplash.com/photo-1758983304673-5a2d091e43e2?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NDk1Nzd8MHwxfHNlYXJjaHwxfHxtb2Rlcm4lMjBhcnRpc3RpYyUyMGxhbXAlMjB3YXJtJTIwbGlnaHR8ZW58MHx8fHwxNzcxNTExNjk0fDA&ixlib=rb-4.1.0&q=85"
           alt="Home decor"
@@ -96,7 +96,7 @@ export default function LoginPage() {
       </div>
 
       {/* Right Side - Form */}
-      <div className="w-full lg:w-1/2 flex items-center justify-center p-8 md:p-12">
+      <div className="w-full lg:w-1/2 flex items-center justify-center p-8 md:p-12 overflow-y-auto">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
