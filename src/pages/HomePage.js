@@ -65,30 +65,35 @@ const faqs = [
 const heroSlides = [
   {
     image: '/hero/1.jpg',
+    mobileImage: '/hero/1-mobile.jpg',
     tag: 'Table Lamps',
     title: 'Bloom in Every Room',
     subtitle: 'Handpainted botanicals that bring nature\'s art into your home',
   },
   {
     image: '/hero/2.jpg',
+    mobileImage: '/hero/2-mobile.jpg',
     tag: 'New Collection',
     title: 'A World of Patterns',
     subtitle: 'Explore our range of handcrafted lamp shades — each one a story',
   },
   {
     image: '/hero/3.jpg',
+    mobileImage: '/hero/3-mobile.jpg',
     tag: 'Table Lamps',
     title: 'Warm. Simple. Yours.',
     subtitle: 'Natural linen and solid wood, crafted to light your everyday moments',
   },
   {
     image: '/hero/4.jpg',
+    mobileImage: '/hero/4-mobile.jpg',
     tag: 'Floor Lamps',
     title: 'Heritage, Illuminated',
     subtitle: 'Traditional Indian motifs woven into elegant floor lighting',
   },
   {
     image: '/hero/5.jpg',
+    mobileImage: '/hero/5-mobile.jpg',
     tag: 'Pendant Lamps',
     title: 'Light That Floats',
     subtitle: 'Organic forms, handspun materials — pendant lamps that become the room',
@@ -127,11 +132,13 @@ export default function HomePage() {
     return () => clearInterval(timer);
   }, []);
 
-  // Preload next slide image
+  // Preload next slide images
   useEffect(() => {
     const nextIndex = (currentSlide + 1) % heroSlides.length;
     const img = new Image();
     img.src = heroSlides[nextIndex].image;
+    const imgMobile = new Image();
+    imgMobile.src = heroSlides[nextIndex].mobileImage;
   }, [currentSlide]);
 
   const nextSlide = () => {
@@ -146,11 +153,24 @@ export default function HomePage() {
     <div className="bg-white" data-testid="home-page">
       {/* Hero Section - Full Width Image Slider */}
       <section className="relative h-[92vh] min-h-[620px] overflow-hidden" data-testid="hero-section">
+        {/* Desktop image */}
         <motion.img
-          key={`hero-bg-${currentSlide}`}
+          key={`hero-bg-desktop-${currentSlide}`}
           src={heroSlides[currentSlide].image}
           alt={heroSlides[currentSlide].title}
-          className="absolute inset-0 w-full h-full object-cover"
+          className="absolute inset-0 w-full h-full object-cover hidden md:block"
+          initial={{ opacity: 0, scale: 1.03 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.8 }}
+          fetchpriority="high"
+          decoding="async"
+        />
+        {/* Mobile image */}
+        <motion.img
+          key={`hero-bg-mobile-${currentSlide}`}
+          src={heroSlides[currentSlide].mobileImage}
+          alt={heroSlides[currentSlide].title}
+          className="absolute inset-0 w-full h-full object-cover block md:hidden"
           initial={{ opacity: 0, scale: 1.03 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.8 }}

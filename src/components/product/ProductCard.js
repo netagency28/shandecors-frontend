@@ -84,7 +84,7 @@ export default function ProductCard({ product, index = 0 }) {
       <Link to={`/products/${product.slug}`}>
         {/* Product Image Container */}
         <div className="relative bg-[#F5F5F5] overflow-hidden">
-          <div className="aspect-square overflow-hidden p-6">
+          <div className="aspect-square overflow-hidden p-2 md:p-6">
             <img
               src={optimizeImageUrl(product.images?.[0], { width: 560, quality: 70 })}
               alt={product.name}

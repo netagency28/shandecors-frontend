@@ -106,9 +106,15 @@ export default function AboutPage() {
               className="relative h-[500px] bg-[#F5F5F5] overflow-hidden"
             >
               <img
-                src="https://images.unsplash.com/photo-1610701596061-2ecf227e85b2?w=800&h=600&fit=crop"
-                alt="Artisan handcrafting a lamp shade"
-                className="w-full h-full object-cover"
+                src="/hero/3-mobile.jpg"
+                alt="Shan Decor handcrafted table lamp"
+                className="w-full h-full object-cover block md:hidden"
+                loading="lazy"
+              />
+              <img
+                src="/hero/3.jpg"
+                alt="Shan Decor handcrafted table lamp"
+                className="w-full h-full object-cover hidden md:block"
                 loading="lazy"
               />
             </motion.div>
@@ -154,9 +160,15 @@ export default function AboutPage() {
               className="relative h-[480px] bg-[#F5F5F5] overflow-hidden order-2 lg:order-1"
             >
               <img
+                src="/hero/3-mobile.jpg"
+                alt="Handcrafted lamp shade casting warm light"
+                className="w-full h-full object-cover block md:hidden"
+                loading="lazy"
+              />
+              <img
                 src="/hero/3.jpg"
                 alt="Handcrafted lamp shade casting warm light"
-                className="w-full h-full object-cover"
+                className="w-full h-full object-cover hidden md:block"
                 loading="lazy"
               />
             </motion.div>

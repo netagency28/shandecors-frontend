@@ -105,7 +105,7 @@ export default function LoginPage() {
         >
           <div className="lg:hidden mb-8">
             <Link to="/" className="font-display text-2xl">
-              Lumière
+              Lumière ✨
             </Link>
           </div>
 
