@@ -24,7 +24,7 @@ export default function Footer() {
               <a href="#" aria-label="Facebook" className="w-10 h-10 border border-white/20 flex items-center justify-center hover:bg-white hover:text-[#1A1918] transition-colors">
                 <Facebook size={16} />
               </a>
-              <a href="#" aria-label="Instagram" className="w-10 h-10 border border-white/20 flex items-center justify-center hover:bg-white hover:text-[#1A1918] transition-colors">
+              <a href="https://www.instagram.com/shan.decorstore" target="_blank" rel="noopener noreferrer" aria-label="Instagram" className="w-10 h-10 border border-white/20 flex items-center justify-center hover:bg-white hover:text-[#1A1918] transition-colors">
                 <Instagram size={16} />
               </a>
             </div>
@@ -69,8 +69,8 @@ export default function Footer() {
               </li>
               <li className="flex gap-3">
                 <Phone size={16} className="flex-shrink-0 text-white/40 mt-0.5" />
-                <a href="tel:+919442042466" className="text-sm text-white/60 hover:text-white transition-colors">
-                  +91 94420 42466
+                <a href="tel:+919003342466" className="text-sm text-white/60 hover:text-white transition-colors">
+                  +91 90033 42466
                 </a>
               </li>
               <li className="flex gap-3">

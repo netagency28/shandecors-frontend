@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronLeft, ChevronRight, Truck, Shield, Award, HandMetal } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '../components/ui/accordion';
@@ -154,29 +154,35 @@ export default function HomePage() {
       {/* Hero Section - Full Width Image Slider */}
       <section className="relative h-[92vh] min-h-[620px] overflow-hidden" data-testid="hero-section">
         {/* Desktop image */}
-        <motion.img
-          key={`hero-bg-desktop-${currentSlide}`}
-          src={heroSlides[currentSlide].image}
-          alt={heroSlides[currentSlide].title}
-          className="absolute inset-0 w-full h-full object-cover hidden md:block"
-          initial={{ opacity: 0, scale: 1.03 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.8 }}
-          fetchpriority="high"
-          decoding="async"
-        />
+        <AnimatePresence mode="sync">
+          <motion.img
+            key={`hero-bg-desktop-${currentSlide}`}
+            src={heroSlides[currentSlide].image}
+            alt={heroSlides[currentSlide].title}
+            className="absolute inset-0 w-full h-full object-cover hidden md:block"
+            initial={{ opacity: 0, scale: 1.03 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.8 }}
+            fetchpriority="high"
+            decoding="async"
+          />
+        </AnimatePresence>
         {/* Mobile image */}
-        <motion.img
-          key={`hero-bg-mobile-${currentSlide}`}
-          src={heroSlides[currentSlide].mobileImage}
-          alt={heroSlides[currentSlide].title}
-          className="absolute inset-0 w-full h-full object-cover block md:hidden"
-          initial={{ opacity: 0, scale: 1.03 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.8 }}
-          fetchpriority="high"
-          decoding="async"
-        />
+        <AnimatePresence mode="sync">
+          <motion.img
+            key={`hero-bg-mobile-${currentSlide}`}
+            src={heroSlides[currentSlide].mobileImage}
+            alt={heroSlides[currentSlide].title}
+            className="absolute inset-0 w-full h-full object-cover block md:hidden"
+            initial={{ opacity: 0, scale: 1.03 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.8 }}
+            fetchpriority="high"
+            decoding="async"
+          />
+        </AnimatePresence>
         <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/40 to-black/10" />
 
         <div className="absolute inset-0 flex items-center">
