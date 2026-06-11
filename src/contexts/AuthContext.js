@@ -12,12 +12,14 @@ import {
 const AuthContext = createContext(undefined);
 
 function getApiErrorMessage(error) {
-  return (
-    error?.response?.data?.message ||
-    error?.response?.data?.error?.message ||
+  const data = error?.response?.data;
+  const nestedError = data?.error;
+  const raw =
+    data?.message ||
+    (typeof nestedError === 'string' ? nestedError : nestedError?.message) ||
     error?.message ||
-    'Request failed'
-  );
+    'Request failed';
+  return raw === '{}' ? 'Could not create account. Please try again.' : raw;
 }
 
 const initialState = {

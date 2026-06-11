@@ -18,6 +18,8 @@ import ProductCard from '../components/product/ProductCard';
 import ReviewForm from '../components/review/ReviewForm';
 import ReviewsList from '../components/review/ReviewsList';
 import { optimizeImageUrl } from '../lib/images';
+import PageMeta from '../components/PageMeta';
+import { buildProductJsonLd } from '../lib/seo';
 
 // ─── helpers ──────────────────────────────────────────────────────────────────
 const isVideoUrl = (url) => /\.(mp4|webm|mov|avi|ogg)(\?.*)?$/i.test(url || '');
@@ -304,12 +306,19 @@ export default function ProductDetailPage() {
 
   if (!product) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-white">
-        <div className="text-center">
-          <h2 className="font-display text-3xl mb-4">Product not found</h2>
-          <Link to="/products"><Button variant="outline">Back to Products</Button></Link>
+      <>
+        <PageMeta
+          title="Product Not Found"
+          path={`/products/${slug}`}
+          noindex
+        />
+        <div className="min-h-screen flex items-center justify-center bg-white">
+          <div className="text-center">
+            <h2 className="font-display text-3xl mb-4">Product not found</h2>
+            <Link to="/products"><Button variant="outline">Back to Products</Button></Link>
+          </div>
         </div>
-      </div>
+      </>
     );
   }
 
@@ -327,8 +336,20 @@ export default function ProductDetailPage() {
       />
     ));
 
+  const productImage = (product.images || []).find((url) => url && !isVideoUrl(url));
+  const productDescription =
+    product.description?.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 160) ||
+    `Shop ${product.name} at Shan Decor.`;
+
   return (
     <div className="min-h-screen bg-white" data-testid="product-detail-page">
+      <PageMeta
+        title={product.name}
+        description={productDescription}
+        path={`/products/${product.slug}`}
+        image={productImage ? safeImgUrl(productImage, { width: 1200, quality: 85 }) : undefined}
+        jsonLd={buildProductJsonLd(product, { avgRating, totalReviews })}
+      />
       {/* Breadcrumb */}
       <div className="border-b border-border/30 py-4 px-4 md:px-8 lg:px-16">
         <div className="container mx-auto max-w-screen-2xl">

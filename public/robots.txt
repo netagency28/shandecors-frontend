@@ -1,4 +1,15 @@
 User-agent: *
 Allow: /
 
+# Private, transactional, and admin routes — not for search indexing
+Disallow: /admin
+Disallow: /login
+Disallow: /signup
+Disallow: /reset-password
+Disallow: /checkout
+Disallow: /payment/
+Disallow: /orders
+Disallow: /profile
+Disallow: /wishlist
+
 Sitemap: https://www.shandecors.store/sitemap.xml

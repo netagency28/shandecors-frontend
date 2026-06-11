@@ -8,6 +8,7 @@ import { Toaster } from './components/ui/sonner';
 import Navbar from './components/layout/Navbar';
 import Footer from './components/layout/Footer';
 import ScrollToTop from './components/ScrollToTop';
+import SeoManager from './components/SeoManager';
 import HomePage from './pages/HomePage';
 import ProductsPage from './pages/ProductsPage';
 import ProductDetailPage from './pages/ProductDetailPage';
@@ -25,6 +26,7 @@ import RefundPolicyPage from './pages/RefundPolicyPage';
 import ShippingPolicyPage from './pages/ShippingPolicyPage';
 import PrivacyPolicyPage from './pages/PrivacyPolicyPage';
 import ResetPasswordPage from './pages/ResetPasswordPage';
+import AuthCallbackPage from './pages/AuthCallbackPage';
 import AdminDashboard from './pages/admin/AdminDashboard';
 import AdminProducts from './pages/admin/AdminProducts';
 import AdminProductForm from './pages/admin/AdminProductForm';
@@ -52,6 +54,7 @@ function App() {
   return (
     <BrowserRouter>
       <ScrollToTop />
+      <SeoManager />
       <ErrorBoundary>
       <AuthProvider>
         <CartProvider>
@@ -61,6 +64,7 @@ function App() {
             <Route path="/login" element={<LoginPage />} />
             <Route path="/signup" element={<LoginPage />} />
             <Route path="/reset-password" element={<ResetPasswordPage />} />
+            <Route path="/auth/callback" element={<AuthCallbackPage />} />
             
             {/* Customer Routes */}
             <Route path="/" element={<CustomerLayout><HomePage /></CustomerLayout>} />

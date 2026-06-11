@@ -38,8 +38,10 @@ export default function LoginPage() {
         const result = await signUp(email, password, name);
         if (result.error) {
           setError(result.error);
+        } else if (result.session) {
+          navigate('/');
         } else {
-          setSuccess('Account created! Please check your email to verify your account.');
+          setSuccess(result.message || 'Account created! Please check your email to verify your account.');
           setIsLogin(true);
         }
       }
