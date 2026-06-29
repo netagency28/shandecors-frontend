@@ -10,6 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs'
 import { Dialog, DialogContent } from '../components/ui/dialog';
 import { getProduct, getProducts } from '../lib/api';
 import { createReview, updateReview, getUserReview } from '../lib/api';
+import { sanitizeHtml } from '../lib/sanitize';
 
 import { useCart } from '../contexts/CartContext';
 import { useAuth } from '../contexts/AuthContext';
@@ -19,7 +20,7 @@ import ReviewForm from '../components/review/ReviewForm';
 import ReviewsList from '../components/review/ReviewsList';
 import { optimizeImageUrl } from '../lib/images';
 import PageMeta from '../components/PageMeta';
-import { buildProductJsonLd } from '../lib/seo';
+import { buildProductPageJsonLd } from '../lib/seo';
 
 // ─── helpers ──────────────────────────────────────────────────────────────────
 const isVideoUrl = (url) => /\.(mp4|webm|mov|avi|ogg)(\?.*)?$/i.test(url || '');
@@ -339,7 +340,7 @@ export default function ProductDetailPage() {
   const productImage = (product.images || []).find((url) => url && !isVideoUrl(url));
   const productDescription =
     product.description?.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 160) ||
-    `Shop ${product.name} at Shan Decor.`;
+    `Shop ${product.name} at Shan Decor — handcrafted lamps and home decor with pan-India delivery.`;
 
   return (
     <div className="min-h-screen bg-white" data-testid="product-detail-page">
@@ -348,7 +349,7 @@ export default function ProductDetailPage() {
         description={productDescription}
         path={`/products/${product.slug}`}
         image={productImage ? safeImgUrl(productImage, { width: 1200, quality: 85 }) : undefined}
-        jsonLd={buildProductJsonLd(product, { avgRating, totalReviews })}
+        jsonLd={buildProductPageJsonLd(product, { avgRating, totalReviews })}
       />
       {/* Breadcrumb */}
       <div className="border-b border-border/30 py-4 px-4 md:px-8 lg:px-16">
@@ -431,12 +432,6 @@ export default function ProductDetailPage() {
                   ))}
                 </div>
               )}
-
-              {/* <div
-                className="text-foreground/70 leading-relaxed mb-6 prose prose-sm max-w-none [&_ul]:list-disc [&_ol]:list-decimal [&_ul]:pl-5 [&_ol]:pl-5 [&_ul]:space-y-1 [&_ol]:space-y-1"
-                dangerouslySetInnerHTML={{ __html: product.description }}
-                data-testid="product-description"
-              /> */}
 
               {/* Stock */}
               <div className="mb-6">
@@ -535,7 +530,7 @@ export default function ProductDetailPage() {
                 <TabsContent value="description" className="pt-6">
                   <div
                     className="text-foreground/70 leading-relaxed prose prose-sm max-w-none [&_ul]:list-disc [&_ol]:list-decimal [&_ul]:pl-5 [&_ol]:pl-5 [&_ul]:space-y-1 [&_ol]:space-y-1"
-                    dangerouslySetInnerHTML={{ __html: product.description }}
+                    dangerouslySetInnerHTML={{ __html: sanitizeHtml(product.description) }}
                   />
                 </TabsContent>
 

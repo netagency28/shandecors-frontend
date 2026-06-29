@@ -9,7 +9,7 @@ import { Textarea } from '../components/ui/textarea';
 import { Separator } from '../components/ui/separator';
 import { useCart } from '../contexts/CartContext';
 import { useAuth } from '../contexts/AuthContext';
-import { createOrder, createGuestOrder, createPaymentOrder, getAddresses } from '../lib/api';
+import { createOrder, createGuestOrder, createPaymentOrder, getAddresses, isAllowedPaymentRedirect } from '../lib/api';
 import * as Sentry from '@sentry/react';
 
 const loadCashfreeSdk = () => new Promise((resolve, reject) => {
@@ -94,19 +94,13 @@ export default function CheckoutPage() {
 
     try {
       // Prepare order data
-      const orderItems = items.map(item => ({
+      const orderItems = items.map((item) => ({
         product_id: item.product_id,
-        product_name: item.product?.name || 'Product',
-        product_image: item.product?.images?.[0] || '',
-        price: item.product?.sale_price || item.product?.price || 0,
-        quantity: item.quantity
+        quantity: item.quantity,
       }));
 
       const orderData = {
         items: orderItems,
-        subtotal: cartTotal,
-        shipping_fee: shippingFee,
-        total: total,
         shipping_address: {
           full_name: formData.full_name,
           email: formData.email,
@@ -128,11 +122,17 @@ export default function CheckoutPage() {
       const order = orderResponse.data;
       Sentry.addBreadcrumb({ category: 'payment', message: 'Order created', level: 'info', data: { orderId: order.id } });
 
+      if (order.checkout_token) {
+        sessionStorage.setItem(`checkout_token_${order.id}`, order.checkout_token);
+      }
+
       const paymentResponse = await createPaymentOrder({
         order_id: order.id,
+        checkout_token: order.checkout_token,
+        return_origin: window.location.origin,
         customer_email: formData.email,
         customer_phone: formData.phone,
-        customer_name: formData.full_name
+        customer_name: formData.full_name,
       });
 
       const gateway = String(paymentResponse.data?.gateway || 'cashfree').toLowerCase();
@@ -143,8 +143,8 @@ export default function CheckoutPage() {
       Sentry.addBreadcrumb({ category: 'payment', message: 'Payment intent created', level: 'info', data: { gateway, mode } });
 
       if (gateway === 'instamojo') {
-        if (!redirectUrl) {
-          setError('Instamojo redirect link was not created. Please check Instamojo configuration and try again.');
+        if (!redirectUrl || !isAllowedPaymentRedirect(redirectUrl)) {
+          setError('Instamojo redirect link was not created or is invalid. Please try again.');
           return;
         }
         window.location.href = redirectUrl;

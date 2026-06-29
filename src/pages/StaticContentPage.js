@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { getContentPage } from '../lib/api';
+import { sanitizeHtml } from '../lib/sanitize';
 
 export default function StaticContentPage({ slug, fallbackTitle, fallbackContent }) {
   const [page, setPage] = useState(null);
@@ -24,8 +25,8 @@ export default function StaticContentPage({ slug, fallbackTitle, fallbackContent
 
   const renderBody = () => {
     if (loading) return <p className="text-muted-foreground">Loading...</p>;
-    if (page?.body) return <div className="prose prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: page.body }} />;
-    if (fallbackContent) return <div className="prose prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: fallbackContent }} />;
+    if (page?.body) return <div className="prose prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: sanitizeHtml(page.body) }} />;
+    if (fallbackContent) return <div className="prose prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: sanitizeHtml(fallbackContent) }} />;
     if (error) return <p className="text-muted-foreground text-sm">Content temporarily unavailable. Please contact support@shandecor.in</p>;
     return null;
   };

@@ -104,7 +104,7 @@ function AdminDashboardContent() {
               </CardHeader>
               <CardContent className="pt-0">
                 <p className="font-display text-2xl md:text-3xl">₹{Number(stats?.incoming_revenue || 0).toLocaleString()}</p>
-                <p className="text-xs text-muted-foreground mt-1">Pending / COD / Unpaid</p>
+                <p className="text-xs text-muted-foreground mt-1">Pending / Unpaid</p>
               </CardContent>
             </Card>
 

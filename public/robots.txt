@@ -6,6 +6,7 @@ Disallow: /admin
 Disallow: /login
 Disallow: /signup
 Disallow: /reset-password
+Disallow: /auth/callback
 Disallow: /checkout
 Disallow: /payment/
 Disallow: /orders

@@ -1,4 +1,5 @@
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom';
+import { useEffect } from 'react';
 import * as Sentry from '@sentry/react';
 import { AuthProvider } from './contexts/AuthContext';
 import { CartProvider } from './contexts/CartContext';
@@ -50,9 +51,36 @@ function CustomerLayout({ children }) {
   );
 }
 
+function AnalyticsLoader() {
+  const location = useLocation();
+
+  useEffect(() => {
+    const sensitivePaths = ['/auth/callback', '/reset-password'];
+    if (sensitivePaths.some((path) => location.pathname.startsWith(path))) {
+      return;
+    }
+
+    if (document.querySelector('script[data-gtm-loader="true"]')) {
+      return;
+    }
+
+    window.dataLayer = window.dataLayer || [];
+    window.dataLayer.push({ 'gtm.start': new Date().getTime(), event: 'gtm.js' });
+
+    const script = document.createElement('script');
+    script.async = true;
+    script.src = 'https://www.googletagmanager.com/gtm.js?id=GTM-W7HSLFNC';
+    script.dataset.gtmLoader = 'true';
+    document.head.appendChild(script);
+  }, [location.pathname]);
+
+  return null;
+}
+
 function App() {
   return (
     <BrowserRouter>
+      <AnalyticsLoader />
       <ScrollToTop />
       <SeoManager />
       <ErrorBoundary>

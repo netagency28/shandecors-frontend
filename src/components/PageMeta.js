@@ -2,8 +2,12 @@ import { useEffect } from 'react';
 import {
   SITE_URL,
   SITE_NAME,
+  DEFAULT_TITLE,
   DEFAULT_DESCRIPTION,
+  DEFAULT_OG_DESCRIPTION,
   DEFAULT_OG_IMAGE,
+  THEME_COLOR,
+  OG_LOCALE,
 } from '../lib/seo';
 
 function upsertMeta(attr, key, content) {
@@ -34,29 +38,35 @@ const JSON_LD_ID = 'page-json-ld';
 
 export default function PageMeta({
   title,
+  fullTitle,
   description = DEFAULT_DESCRIPTION,
+  ogDescription,
   path = '/',
   noindex = false,
   image = DEFAULT_OG_IMAGE,
   jsonLd = null,
 }) {
   useEffect(() => {
-    const fullTitle = title ? `${title} | ${SITE_NAME}` : SITE_NAME;
+    const resolvedTitle = fullTitle || (title ? `${title} | ${SITE_NAME}` : DEFAULT_TITLE);
+    const resolvedOgDescription = ogDescription || description;
     const canonical = `${SITE_URL}${path.startsWith('/') ? path : `/${path}`}`;
     const robots = noindex ? 'noindex, nofollow' : 'index, follow';
 
-    document.title = fullTitle;
+    document.title = resolvedTitle;
     upsertLink('canonical', canonical);
     upsertMeta('name', 'description', description);
     upsertMeta('name', 'robots', robots);
+    upsertMeta('name', 'theme-color', THEME_COLOR);
     upsertMeta('property', 'og:type', 'website');
-    upsertMeta('property', 'og:title', fullTitle);
-    upsertMeta('property', 'og:description', description);
+    upsertMeta('property', 'og:site_name', SITE_NAME);
+    upsertMeta('property', 'og:locale', OG_LOCALE);
+    upsertMeta('property', 'og:title', resolvedTitle);
+    upsertMeta('property', 'og:description', resolvedOgDescription);
     upsertMeta('property', 'og:url', canonical);
     upsertMeta('property', 'og:image', image);
     upsertMeta('name', 'twitter:card', 'summary_large_image');
-    upsertMeta('name', 'twitter:title', fullTitle);
-    upsertMeta('name', 'twitter:description', description);
+    upsertMeta('name', 'twitter:title', resolvedTitle);
+    upsertMeta('name', 'twitter:description', resolvedOgDescription);
     upsertMeta('name', 'twitter:image', image);
 
     const existing = document.getElementById(JSON_LD_ID);
@@ -69,7 +79,7 @@ export default function PageMeta({
     } else if (existing) {
       existing.remove();
     }
-  }, [title, description, path, noindex, image, jsonLd]);
+  }, [title, fullTitle, description, ogDescription, path, noindex, image, jsonLd]);
 
   return null;
 }

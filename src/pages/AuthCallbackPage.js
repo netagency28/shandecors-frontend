@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { supabase } from '../lib/supabase';
+import { useAuth } from '../contexts/AuthContext';
 
 export default function AuthCallbackPage() {
   const navigate = useNavigate();
+  const { establishSessionFromTokens } = useAuth();
   const [error, setError] = useState('');
 
   useEffect(() => {
@@ -14,39 +15,33 @@ export default function AuthCallbackPage() {
       const refreshToken = params.get('refresh_token');
       const type = params.get('type');
 
+      window.history.replaceState(null, '', window.location.pathname + window.location.search);
+
       if (!accessToken) {
         setError('Invalid or expired confirmation link. Please sign up again or contact support.');
         return;
       }
 
-      const { error: sessionError } = await supabase.auth.setSession({
-        access_token: accessToken,
-        refresh_token: refreshToken || '',
-      });
-
-      if (sessionError) {
+      try {
+        await establishSessionFromTokens({
+          access_token: accessToken,
+          refresh_token: refreshToken || '',
+        });
+      } catch (_sessionError) {
         setError('Invalid or expired confirmation link. Please sign up again or contact support.');
         return;
       }
 
-      if (accessToken) {
-        localStorage.setItem('supabase_token', accessToken);
-      }
-      if (refreshToken) {
-        localStorage.setItem('supabase_refresh_token', refreshToken);
-      }
-
       if (type === 'recovery') {
-        window.location.replace('/reset-password');
+        navigate('/reset-password', { replace: true });
         return;
       }
 
-      // Full reload so AuthContext picks up the new session from localStorage
-      window.location.replace('/');
+      navigate('/', { replace: true });
     };
 
     handleCallback();
-  }, [navigate]);
+  }, [establishSessionFromTokens, navigate]);
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">

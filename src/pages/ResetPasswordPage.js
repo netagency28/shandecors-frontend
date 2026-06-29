@@ -1,40 +1,25 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { supabase } from '../lib/supabase';
+import { useAuth } from '../contexts/AuthContext';
+import { updatePassword as apiUpdatePassword } from '../lib/api';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 
 export default function ResetPasswordPage() {
   const navigate = useNavigate();
+  const { isAuthenticated, isLoading } = useAuth();
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [loading, setLoading] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
-  const [sessionReady, setSessionReady] = useState(false);
 
   useEffect(() => {
-    // Supabase sends the recovery token in the URL hash after redirect
-    const hash = window.location.hash;
-    const params = new URLSearchParams(hash.replace('#', '?'));
-    const accessToken = params.get('access_token');
-    const refreshToken = params.get('refresh_token');
-    const type = params.get('type');
-
-    if (type === 'recovery' && accessToken) {
-      supabase.auth.setSession({ access_token: accessToken, refresh_token: refreshToken || '' })
-        .then(({ error: sessionError }) => {
-          if (sessionError) {
-            setError('Invalid or expired reset link. Please request a new one.');
-          } else {
-            setSessionReady(true);
-          }
-        });
-    } else {
-      setError('Invalid reset link. Please request a new password reset.');
+    if (!isLoading && !isAuthenticated) {
+      setError('Invalid or expired reset link. Please request a new password reset.');
     }
-  }, []);
+  }, [isAuthenticated, isLoading]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -49,19 +34,15 @@ export default function ResetPasswordPage() {
       return;
     }
 
-    setLoading(true);
+    setSubmitting(true);
     try {
-      const { error: updateError } = await supabase.auth.updateUser({ password });
-      if (updateError) {
-        setError(updateError.message || 'Failed to reset password.');
-        return;
-      }
+      await apiUpdatePassword(password);
       setSuccess(true);
       setTimeout(() => navigate('/login'), 3000);
-    } catch {
-      setError('An unexpected error occurred. Please try again.');
+    } catch (err) {
+      setError(err.response?.data?.message || 'Failed to reset password. Please request a new link.');
     } finally {
-      setLoading(false);
+      setSubmitting(false);
     }
   };
 
@@ -94,7 +75,7 @@ export default function ResetPasswordPage() {
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="At least 8 characters"
                 required
-                disabled={!sessionReady || loading}
+                disabled={!isAuthenticated || isLoading || submitting}
                 className="mt-1 rounded-none"
               />
             </div>
@@ -107,16 +88,16 @@ export default function ResetPasswordPage() {
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 placeholder="Confirm your password"
                 required
-                disabled={!sessionReady || loading}
+                disabled={!isAuthenticated || isLoading || submitting}
                 className="mt-1 rounded-none"
               />
             </div>
             <Button
               type="submit"
-              disabled={!sessionReady || loading}
+              disabled={!isAuthenticated || isLoading || submitting}
               className="w-full rounded-none bg-foreground text-background hover:bg-foreground/90 uppercase tracking-widest text-xs font-bold py-6"
             >
-              {loading ? 'Resetting...' : 'Reset Password'}
+              {submitting ? 'Resetting...' : 'Reset Password'}
             </Button>
             <div className="text-center">
               <button

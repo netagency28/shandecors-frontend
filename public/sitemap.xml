@@ -41,6 +41,12 @@
     <priority>0.5</priority>
   </url>
   <url>
+    <loc>https://www.shandecors.store/products?category=lamps</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.85</priority>
+    <lastmod>2026-04-12</lastmod>
+  </url>
+  <url>
     <loc>https://www.shandecors.store/products/lume-grain-table-lamp</loc>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>

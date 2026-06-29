@@ -100,12 +100,22 @@ webpackConfig.devServer = (devServerConfig) => {
     };
   }
 
-  // Add proxy configuration for API requests
+  // Proxy API to backend; rewrite cookies so HttpOnly auth works on localhost:3000
   devServerConfig.proxy = {
     '/api': {
       target: 'http://localhost:8000',
       changeOrigin: true,
       secure: false,
+      cookieDomainRewrite: 'localhost',
+      onProxyRes(proxyRes) {
+        const cookies = proxyRes.headers['set-cookie'];
+        if (!cookies) return;
+        proxyRes.headers['set-cookie'] = cookies.map((cookie) =>
+          cookie
+            .replace(/; secure/gi, '')
+            .replace(/; SameSite=None/gi, '; SameSite=Lax'),
+        );
+      },
     },
   };
 

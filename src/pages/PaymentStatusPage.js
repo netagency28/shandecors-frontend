@@ -14,6 +14,7 @@ export default function PaymentStatusPage() {
   const paymentId = searchParams.get('payment_id') || '';
   const paymentRequestId = searchParams.get('payment_request_id') || '';
   const paymentStatusParam = searchParams.get('payment_status') || '';
+  const checkoutTokenParam = searchParams.get('checkout_token') || '';
   const { clearCart } = useCart();
   const cartClearedRef = useRef(false);
   
@@ -36,12 +37,36 @@ export default function PaymentStatusPage() {
         return;
       }
 
+      if (checkoutTokenParam) {
+        sessionStorage.setItem(`checkout_token_${orderId}`, checkoutTokenParam);
+        const params = new URLSearchParams(window.location.search);
+        params.delete('checkout_token');
+        const query = params.toString();
+        window.history.replaceState(
+          null,
+          '',
+          `${window.location.pathname}${query ? `?${query}` : ''}`,
+        );
+      }
+
       try {
+        let checkoutToken =
+          checkoutTokenParam ||
+          sessionStorage.getItem(`checkout_token_${orderId}`) ||
+          '';
+
+        if (!checkoutToken) {
+          setStatus('failed');
+          setError('Checkout session expired. Please contact support with your order ID.');
+          return;
+        }
+
         const response = await verifyPayment(orderId, {
           gateway,
           payment_id: paymentId,
           payment_request_id: paymentRequestId,
           payment_status: paymentStatusParam,
+          checkout_token: checkoutToken,
         });
         const data = response.data;
 
@@ -50,6 +75,7 @@ export default function PaymentStatusPage() {
             clearCart();
             cartClearedRef.current = true;
           }
+          sessionStorage.removeItem(`checkout_token_${orderId}`);
           Sentry.addBreadcrumb({ category: 'payment', message: 'Payment verified successfully', level: 'info', data: { orderId } });
           setStatus('success');
           setOrderDetails(data);
@@ -72,7 +98,7 @@ export default function PaymentStatusPage() {
     };
 
     verify();
-  }, [orderId, gateway, paymentId, paymentRequestId, paymentStatusParam, clearCart]);
+  }, [orderId, gateway, paymentId, paymentRequestId, paymentStatusParam, checkoutTokenParam, clearCart]);
 
   if (status === 'loading') {
     return (

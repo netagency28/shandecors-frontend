@@ -3,9 +3,9 @@ import {
   signUp as apiSignUp,
   signIn as apiSignIn,
   signOut as apiSignOut,
-  refreshSession as apiRefreshSession,
+  exchangeSession as apiExchangeSession,
   resetPassword as apiResetPassword,
-  getMe,
+  getSession,
   updateProfile as apiUpdateProfile,
 } from '../lib/api';
 
@@ -24,7 +24,6 @@ function getApiErrorMessage(error) {
 
 const initialState = {
   user: null,
-  session: null,
   isLoading: true,
   error: null,
   isAuthenticated: false,
@@ -37,7 +36,6 @@ function authReducer(state, action) {
       return {
         ...state,
         user: action.payload.user,
-        session: action.payload.session,
         profile: action.payload.profile ?? state.profile,
         isAuthenticated: !!action.payload.user,
         isLoading: false,
@@ -77,101 +75,78 @@ export function AuthProvider({ children }) {
   const [state, dispatch] = useReducer(authReducer, initialState);
 
   const refreshMe = useCallback(async () => {
-    const response = await getMe();
+    const response = await getSession();
     return response.data;
+  }, []);
+
+  const applySession = useCallback((data) => {
+    if (!data?.authenticated || !data?.user) {
+      return false;
+    }
+
+    dispatch({
+      type: 'SET_USER',
+      payload: {
+        user: {
+          id: data.user.id,
+          email: data.user.email,
+          name: data.user.name,
+          role: data.user.role,
+        },
+        profile: data.profile,
+      },
+    });
+    return true;
+  }, []);
+
+  const applySignInResponse = useCallback((signinData) => {
+    if (!signinData?.authenticated || !signinData?.user) {
+      return false;
+    }
+
+    dispatch({
+      type: 'SET_USER',
+      payload: {
+        user: {
+          id: signinData.user.id,
+          email: signinData.user.email,
+          name: signinData.user.name,
+          role: signinData.user.role,
+        },
+        profile: signinData.profile || {
+          id: signinData.user.id,
+          email: signinData.user.email,
+          name: signinData.user.name,
+          is_admin: signinData.user.role === 'ADMIN',
+        },
+      },
+    });
+    return true;
   }, []);
 
   useEffect(() => {
     const bootstrapSession = async () => {
-      const token = localStorage.getItem('supabase_token');
-      const refreshToken = localStorage.getItem('supabase_refresh_token');
-      if (!token) {
-        dispatch({ type: 'SET_LOADING', payload: false });
-        return;
-      }
-
       try {
-        const me = await refreshMe();
-        dispatch({
-          type: 'SET_USER',
-          payload: {
-            user: {
-              id: me.id,
-              email: me.email,
-              name: me.name,
-              role: me.role,
-            },
-            session: { access_token: token },
-            profile: me.profile,
-          },
-        });
-      } catch (_error) {
-        if (refreshToken) {
-          try {
-            const refreshResponse = await apiRefreshSession(refreshToken);
-            const nextAccessToken = refreshResponse.data?.session?.access_token;
-            const nextRefreshToken = refreshResponse.data?.session?.refresh_token;
-
-            if (nextAccessToken) {
-              localStorage.setItem('supabase_token', nextAccessToken);
-            }
-            if (nextRefreshToken) {
-              localStorage.setItem('supabase_refresh_token', nextRefreshToken);
-            }
-
-            const me = await refreshMe();
-            dispatch({
-              type: 'SET_USER',
-              payload: {
-                user: {
-                  id: me.id,
-                  email: me.email,
-                  name: me.name,
-                  role: me.role,
-                },
-                session: refreshResponse.data?.session || { access_token: nextAccessToken },
-                profile: me.profile,
-              },
-            });
-            return;
-          } catch (_refreshError) {
-            // Fall through to logout
-          }
+        const data = await refreshMe();
+        if (!applySession(data)) {
+          dispatch({ type: 'LOGOUT' });
         }
-
-        localStorage.removeItem('supabase_token');
-        localStorage.removeItem('supabase_refresh_token');
+      } catch (_error) {
         dispatch({ type: 'LOGOUT' });
       }
     };
 
     bootstrapSession();
-  }, [refreshMe]);
+  }, [refreshMe, applySession]);
 
   const signUp = useCallback(async (email, password, name) => {
     dispatch({ type: 'SET_LOADING', payload: true });
     try {
       const response = await apiSignUp(email, password, name);
 
-      if (response.data?.session?.access_token) {
-        localStorage.setItem('supabase_token', response.data.session.access_token);
-        if (response.data?.session?.refresh_token) {
-          localStorage.setItem('supabase_refresh_token', response.data.session.refresh_token);
-        }
-        const me = await refreshMe();
-        dispatch({
-          type: 'SET_USER',
-          payload: {
-            user: {
-              id: me.id,
-              email: me.email,
-              name: me.name,
-              role: me.role,
-            },
-            session: response.data.session,
-            profile: me.profile,
-          },
-        });
+      if (response.data?.authenticated) {
+        const data = await refreshMe();
+        applySession(data);
       } else {
         dispatch({ type: 'SET_LOADING', payload: false });
       }
@@ -182,42 +157,38 @@ export function AuthProvider({ children }) {
       dispatch({ type: 'SET_ERROR', payload: message });
       return { error: message };
     }
-  }, [refreshMe]);
+  }, [refreshMe, applySession]);
 
   const signIn = useCallback(async (email, password) => {
     dispatch({ type: 'SET_LOADING', payload: true });
     try {
-      const response = await apiSignIn(email, password);
+      const signInResponse = await apiSignIn(email, password);
+      const signinData = signInResponse.data;
 
-      if (response.data?.session?.access_token) {
-        localStorage.setItem('supabase_token', response.data.session.access_token);
-        if (response.data?.session?.refresh_token) {
-          localStorage.setItem('supabase_refresh_token', response.data.session.refresh_token);
-        }
+      const sessionData = await refreshMe();
+      if (applySession(sessionData) || applySignInResponse(signinData)) {
+        return { authenticated: true };
       }
 
-      const me = await refreshMe();
-      dispatch({
-        type: 'SET_USER',
-        payload: {
-          user: {
-            id: me.id,
-            email: me.email,
-            name: me.name,
-            role: me.role,
-          },
-          session: response.data.session,
-          profile: me.profile,
-        },
-      });
-
-      return response.data;
+      throw new Error('Signed in but session could not be established. Please try again.');
     } catch (error) {
       const message = getApiErrorMessage(error);
       dispatch({ type: 'SET_ERROR', payload: message });
       return { error: message };
     }
-  }, [refreshMe]);
+  }, [refreshMe, applySession, applySignInResponse]);
+
+  const establishSessionFromTokens = useCallback(async (tokens) => {
+    const exchangeResponse = await apiExchangeSession(tokens);
+    const exchangeData = exchangeResponse.data;
+
+    const sessionData = await refreshMe();
+    if (applySession(sessionData) || applySignInResponse(exchangeData)) {
+      return;
+    }
+
+    throw new Error('Session exchange failed');
+  }, [refreshMe, applySession, applySignInResponse]);
 
   const updateProfile = useCallback(async (payload) => {
     try {
@@ -245,8 +216,6 @@ export function AuthProvider({ children }) {
     dispatch({ type: 'SET_LOADING', payload: true });
     try {
       await apiSignOut();
-      localStorage.removeItem('supabase_token');
-      localStorage.removeItem('supabase_refresh_token');
       dispatch({ type: 'LOGOUT' });
     } catch (error) {
       dispatch({ type: 'SET_ERROR', payload: error.message });
@@ -261,8 +230,9 @@ export function AuthProvider({ children }) {
     updateProfile,
     resetPassword,
     refreshMe,
+    establishSessionFromTokens,
     dispatch,
-  }), [state, signUp, signIn, signOut, updateProfile, resetPassword, refreshMe]);
+  }), [state, signUp, signIn, signOut, updateProfile, resetPassword, refreshMe, establishSessionFromTokens]);
 
   return (
     <AuthContext.Provider value={value}>

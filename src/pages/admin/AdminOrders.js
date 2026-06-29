@@ -55,11 +55,15 @@ function AdminOrdersContent() {
     }
   };
 
-  const filteredOrders = orders.filter(order => 
-    order.order_number?.toLowerCase().includes(search.toLowerCase()) ||
-    order.shipping_address?.full_name?.toLowerCase().includes(search.toLowerCase()) ||
-    order.shipping_address?.email?.toLowerCase().includes(search.toLowerCase())
-  );
+  const filteredOrders = orders.filter((order) => {
+    const method = String(order.payment_method || '').toLowerCase();
+    if (method === 'cod') return false;
+    return (
+      order.order_number?.toLowerCase().includes(search.toLowerCase()) ||
+      order.shipping_address?.full_name?.toLowerCase().includes(search.toLowerCase()) ||
+      order.shipping_address?.email?.toLowerCase().includes(search.toLowerCase())
+    );
+  });
 
   const handleExportCsv = () => {
     const rows = filteredOrders.map((order) => ({

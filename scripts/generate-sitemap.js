@@ -7,7 +7,7 @@ const path = require('path');
 
 const SITE_URL = 'https://www.shandecors.store';
 const BACKEND_URL =
-  process.env.REACT_APP_BACKEND_URL || 'https://shandecors-backend.onrender.com';
+  process.env.REACT_APP_BACKEND_URL || 'https://api.shandecors.store';
 
 const STATIC_PAGES = [
   { loc: '/', changefreq: 'daily', priority: '1.0' },
@@ -51,6 +51,16 @@ async function fetchAllProducts() {
   return products;
 }
 
+async function fetchCategories() {
+  const response = await fetch(`${BACKEND_URL}/api/categories`);
+  if (!response.ok) {
+    throw new Error(`Categories API returned ${response.status}`);
+  }
+
+  const payload = await response.json();
+  return Array.isArray(payload) ? payload : payload.data || [];
+}
+
 function buildXml(entries) {
   const urls = entries
     .map((entry) => {
@@ -79,9 +89,14 @@ function buildXml(entries) {
 
 async function main() {
   let productEntries = [];
+  let categoryEntries = [];
 
   try {
-    const products = await fetchAllProducts();
+    const [products, categories] = await Promise.all([
+      fetchAllProducts(),
+      fetchCategories(),
+    ]);
+
     productEntries = products.map((product) => ({
       loc: `/products/${product.slug}`,
       changefreq: 'weekly',
@@ -91,11 +106,21 @@ async function main() {
         : undefined,
     }));
     console.log(`Sitemap: included ${productEntries.length} product URL(s).`);
+
+    categoryEntries = categories.map((category) => ({
+      loc: `/products?category=${category.slug}`,
+      changefreq: 'weekly',
+      priority: '0.85',
+      lastmod: category.updated_at
+        ? new Date(category.updated_at).toISOString().split('T')[0]
+        : undefined,
+    }));
+    console.log(`Sitemap: included ${categoryEntries.length} category URL(s).`);
   } catch (error) {
-    console.warn(`Sitemap: could not fetch products (${error.message}). Static pages only.`);
+    console.warn(`Sitemap: could not fetch catalog data (${error.message}). Static pages only.`);
   }
 
-  const xml = buildXml([...STATIC_PAGES, ...productEntries]);
+  const xml = buildXml([...STATIC_PAGES, ...categoryEntries, ...productEntries]);
   const outputPath = path.join(__dirname, '..', 'public', 'sitemap.xml');
   fs.writeFileSync(outputPath, xml, 'utf8');
   console.log(`Sitemap written to ${outputPath}`);

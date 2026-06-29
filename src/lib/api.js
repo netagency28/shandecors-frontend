@@ -1,29 +1,62 @@
 import axios from 'axios';
 
+const isLocalDevHost = (hostname) => {
+  if (!hostname) return false;
+  if (hostname === 'localhost' || hostname === '127.0.0.1') return true;
+  if (/^192\.168\.\d{1,3}\.\d{1,3}$/.test(hostname)) return true;
+  if (/^10\.\d{1,3}\.\d{1,3}\.\d{1,3}$/.test(hostname)) return true;
+  return false;
+};
+
 const isLocalFrontend =
   typeof window !== 'undefined' &&
-  ['localhost', '127.0.0.1'].includes(window.location.hostname);
+  isLocalDevHost(window.location.hostname);
 
-const BACKEND_URL = isLocalFrontend
-  ? 'http://localhost:8000'
-  : process.env.REACT_APP_BACKEND_URL;
-export const API = `${BACKEND_URL}/api`;
+// In local dev, use same-origin /api (proxied by craco) so HttpOnly auth cookies work.
+const PRODUCTION_BACKEND_URL =
+  process.env.REACT_APP_BACKEND_URL || 'https://api.shandecors.store';
+
+const shouldUseDevProxy = () => {
+  if (typeof window === 'undefined') return false;
+  if (process.env.NODE_ENV === 'development') return true;
+  return isLocalDevHost(window.location.hostname);
+};
+
+const BACKEND_URL = shouldUseDevProxy()
+  ? ''
+  : PRODUCTION_BACKEND_URL.replace(/\/$/, '');
+
+export const API = BACKEND_URL ? `${BACKEND_URL}/api` : '/api';
 
 const api = axios.create({
   baseURL: API,
+  withCredentials: true,
   headers: {
     'Content-Type': 'application/json',
   },
 });
 
-// Add auth token to requests
-api.interceptors.request.use((config) => {
-  const token = localStorage.getItem('supabase_token');
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
+const ALLOWED_PAYMENT_REDIRECT_HOSTS = [
+  'instamojo.com',
+  'www.instamojo.com',
+  'test.instamojo.com',
+  'cashfree.com',
+  'payments.cashfree.com',
+  'sandbox.cashfree.com',
+];
+
+export const isAllowedPaymentRedirect = (url) => {
+  if (!url || typeof url !== 'string') return false;
+  try {
+    const parsed = new URL(url);
+    if (parsed.protocol !== 'https:' && !isLocalFrontend) return false;
+    return ALLOWED_PAYMENT_REDIRECT_HOSTS.some(
+      (host) => parsed.hostname === host || parsed.hostname.endsWith(`.${host}`),
+    );
+  } catch {
+    return false;
   }
-  return config;
-});
+};
 
 api.interceptors.response.use(
   (response) => response,
@@ -35,37 +68,21 @@ api.interceptors.response.use(
     const shouldSkipRefresh = (
       requestUrl.includes('/auth/signin') ||
       requestUrl.includes('/auth/signup') ||
-      requestUrl.includes('/auth/refresh')
+      requestUrl.includes('/auth/refresh') ||
+      requestUrl.includes('/auth/session')
     );
 
     if (status === 401 && !originalRequest._retry && !shouldSkipRefresh) {
-      const refreshToken = localStorage.getItem('supabase_refresh_token');
-      if (refreshToken) {
-        originalRequest._retry = true;
-        try {
-          const refreshResponse = await axios.post(`${API}/auth/refresh`, {
-            refresh_token: refreshToken,
-          });
-
-          const newAccess = refreshResponse.data?.session?.access_token;
-          const newRefresh = refreshResponse.data?.session?.refresh_token;
-
-          if (newAccess) {
-            localStorage.setItem('supabase_token', newAccess);
-            originalRequest.headers = originalRequest.headers || {};
-            originalRequest.headers.Authorization = `Bearer ${newAccess}`;
-          }
-          if (newRefresh) {
-            localStorage.setItem('supabase_refresh_token', newRefresh);
-          }
-
-          return api(originalRequest);
-        } catch (refreshError) {
-          localStorage.removeItem('supabase_token');
-          localStorage.removeItem('supabase_refresh_token');
+      originalRequest._retry = true;
+      try {
+        await axios.post(`${API}/auth/refresh`, {}, { withCredentials: true });
+        return api(originalRequest);
+      } catch (refreshError) {
+        const onLoginPage = window.location.pathname.startsWith('/login');
+        if (!onLoginPage) {
           window.location.href = '/login';
-          return Promise.reject(refreshError);
         }
+        return Promise.reject(refreshError);
       }
     }
 
@@ -103,8 +120,9 @@ export const verifyPayment = (orderId, params) => api.get(`/payments/verify/${or
 export const signUp = (email, password, name) => api.post('/auth/signup', { email, password, name });
 export const signIn = (email, password) => api.post('/auth/signin', { email, password });
 export const signOut = () => api.post('/auth/signout');
-export const refreshSession = (refreshToken) => api.post('/auth/refresh', { refresh_token: refreshToken });
+export const exchangeSession = (tokens) => api.post('/auth/session', tokens);
 export const resetPassword = (email) => api.post('/auth/reset-password', { email });
+export const updatePassword = (password) => api.post('/auth/update-password', { password });
 
 // Admin
 export const getDashboardStats = () => api.get('/admin/dashboard');
@@ -150,6 +168,7 @@ export const uploadMultiple = (files, type = 'product') => {
 };
 
 // Auth
+export const getSession = () => api.get('/auth/session');
 export const getMe = () => api.get('/auth/me');
 export const updateProfile = (data) => api.post('/auth/profile', data);
 
@@ -179,8 +198,6 @@ export const updateAddress = (id, data) => api.put(`/addresses/${id}`, data);
 export const deleteAddress = (id) => api.delete(`/addresses/${id}`);
 export const setDefaultAddress = (id) => api.put(`/addresses/${id}/default`);
 
-// Seed data
-export const seedData = () => api.post('/seed');
 export const getContentPage = (slug) => api.get(`/content/${slug}`);
 export const submitContactInquiry = (data) => api.post('/content/contact-inquiry', data);
 
